@@ -1,39 +1,39 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
 
   <link rel="icon" href="favicon.ico">
-  <link rel="stylesheet" type="text/css" href="styles/app.less"/>
-
-
-  <style type="text/css">
-    html, body, #canvas, #canvas > div {
-      height: 100%;
-    }
-  </style>
-
+  <link rel="stylesheet" type="text/css" href="styles/app.less" />
   <title>[chor-js] Demo</title>
 </head>
-<body>
 
-  <div class="content">
-    <div id="canvas">
-      <ul class="corner-links">
-        <li>
-          <a href="https://bpt.hpi.uni-potsdam.de/legal/" title="Legal notice" target="_blank">legal notice</a>
-        </li>
-        <li>
-          <a class="git-info icon-github-circled" href="https://github.com/bptlab/chor-js-demo" target="_blank" title="Contribute on GitHub"></a>
-        </li>
-      </ul>
+<body>
+  <div id="split-container">
+    <div class="content">
+      <div id="canvas">
+        <ul class="corner-links">
+          <li>
+            <a href="https://bpt.hpi.uni-potsdam.de/legal/" title="Legal notice" target="_blank">legal notice</a>
+          </li>
+          <li>
+            <a class="git-info icon-github-circled" href="https://github.com/bptlab/chor-js-demo" target="_blank"
+              title="Contribute on GitHub"></a>
+          </li>
+        </ul>
+      </div>
+
+      <div id="panel-toggle">
+        <div data-toggle-panel="properties-panel" title="Toggle properties panel"><span>Properties</span></div>
+      </div>
+      <div id="properties-panel" class="side-panel hidden"></div>
+      <div id="resizer"></div>
+      <div id="bpenv-container"></div>
     </div>
-    <div id="panel-toggle">
-      <div data-toggle-panel="properties-panel" title="Toggle properties panel"><span>Properties</span></div>
-    </div>
-    <div id="properties-panel" class="side-panel hidden"></div>
+
   </div>
 
   <div class="buttons djs-container">
@@ -51,4 +51,5 @@
   <script src="./app.js"></script>
 
 </body>
+
 </html>

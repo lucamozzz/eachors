@@ -1,4 +1,6 @@
-import ChoreoModeler from 'chor-js/lib/Modeler';
+import bpenvModeler from 'bpenv-modeler';
+import 'bpenv-modeler/dist/style.css';
+import ChoreoModeler from './chor-js/lib/Modeler';
 import PropertiesPanelModule from 'bpmn-js-properties-panel';
 
 import Reporter from './lib/validator/Validator.js';
@@ -169,5 +171,40 @@ window.addEventListener('beforeunload', function(e) {
     e.returnValue = '';
   }
 });
+
+const resizer = document.getElementById('resizer');
+const left = document.getElementById('canvas');
+const right = document.getElementById('bpenv-container');
+const container = document.getElementById('split-container');
+
+let x = 0;
+let leftWidth = 0;
+
+const onMouseMove = (e) => {
+  const dx = e.clientX - x;
+  const newLeftWidth = ((leftWidth + dx) * 100) / container.getBoundingClientRect().width;
+
+  if (newLeftWidth < 10 || newLeftWidth > 90) return; // optional limit
+
+  left.style.flexBasis = `${newLeftWidth}%`;
+  right.style.flexBasis = `${100 - newLeftWidth}%`;
+};
+
+const onMouseUp = () => {
+  document.removeEventListener('mousemove', onMouseMove);
+  document.removeEventListener('mouseup', onMouseUp);
+  document.body.style.cursor = 'default';
+};
+
+resizer.addEventListener('mousedown', (e) => {
+  x = e.clientX;
+  leftWidth = left.getBoundingClientRect().width;
+  document.body.style.cursor = 'col-resize';
+
+  document.addEventListener('mousemove', onMouseMove);
+  document.addEventListener('mouseup', onMouseUp);
+});
+
+bpenvModeler.render('bpenv-container');
 
 renderModel(xml);

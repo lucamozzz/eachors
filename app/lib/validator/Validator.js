@@ -1,4 +1,4 @@
-import { heightOfTopBands } from 'chor-js/lib/util/BandUtil';
+import { heightOfTopBands } from '../../chor-js/lib/util/BandUtil';
 
 import {
   isChoreoActivity

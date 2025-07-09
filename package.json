@@ -40,8 +40,11 @@
     "parcel-plugin-stringify-anything": "^1.2.0"
   },
   "dependencies": {
+    "bpenv-modeler": "^0.0.7",
     "bpmn-js-properties-panel": "^0.35.0",
-    "chor-js": "0.7.1",
-    "inherits": "^2.0.4"
+    "chor-js": "^0.7.1",
+    "inherits": "^2.0.4",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
   }
 }

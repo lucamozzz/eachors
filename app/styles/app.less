@@ -1,4 +1,4 @@
-@import url("../../node_modules/chor-js/assets/styles/chor-js.css");
+@import url("../chor-js/assets/styles/chor-js.css");
 @import url("../icons/css/chor-editor.css");
 @import url("../../node_modules/bpmn-js-properties-panel/dist/assets/bpmn-js-properties-panel.css");
 
@@ -31,7 +31,7 @@ div#panel-toggle {
   background-color: #FAFAFA;
   border-left: solid 1px #CCC;
 
-  & > div {
+  &>div {
     height: 95px;
     width: 20px;
 
@@ -46,7 +46,7 @@ div#panel-toggle {
       border-top: solid 1px #CCC;
     }
 
-    & > span {
+    &>span {
       font-size: 11px;
       transform: rotate(-90deg);
       white-space: nowrap;
@@ -73,7 +73,7 @@ div#panel-toggle {
   min-height: 100%;
   border-left: 1px solid #CCC;
 
-  > .bpp-properties-panel {
+  >.bpp-properties-panel {
     background-color: #FAFAFA;
   }
 }
@@ -93,7 +93,7 @@ div#panel-toggle {
     position: relative;
   }
 
-  > .message {
+  >.message {
     width: 100%;
     height: 100%;
     text-align: center;
@@ -163,7 +163,8 @@ div#panel-toggle {
     border-left: 1px solid #DDD;
   }
 
-  a, button {
+  a,
+  button {
     display: block;
     width: 40px;
     padding: 0px;
@@ -174,7 +175,8 @@ div#panel-toggle {
     color: var(--palette-entry-color);
   }
 
-  a:hover, button:hover {
+  a:hover,
+  button:hover {
     color: var(--palette-entry-hover-color);
     cursor: pointer;
   }
@@ -200,15 +202,15 @@ ul.corner-links {
   list-style: none;
   align-items: center;
 
-  > li {
+  >li {
     margin-left: 10px;
 
-    > a {
+    >a {
       font-size: 10px;
       color: #404040;
     }
 
-    > a.icon-github-circled {
+    >a.icon-github-circled {
       font-size: 30px;
       text-decoration: none;
     }
@@ -225,7 +227,7 @@ ul.corner-links {
   width: 20px;
   height: 20px;
 
-  &:hover > .validation-info {
+  &:hover>.validation-info {
     display: block;
   }
 
@@ -298,4 +300,37 @@ ul.corner-links {
 .is-dragover {
   background-color: #eeeeee;
   opacity: 0.25;
+}
+
+#split-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+#canvas,
+#bpenv-container {
+  height: 100%;
+  overflow: auto;
+}
+
+#canvas {
+  flex: 1;
+  min-width: 100px;
+}
+
+#bpenv-container {
+  flex: 1;
+  min-width: 100px;
+  position: relative;
+  /* importante per il riferimento */
+}
+
+#resizer {
+  width: 5px;
+  cursor: col-resize;
+  background-color: #ccc;
+  position: relative;
+  z-index: 10;
 }
