@@ -5,6 +5,8 @@ import PropertiesPanelModule from 'bpmn-js-properties-panel';
 
 import Reporter from './lib/validator/Validator.js';
 import PropertiesProviderModule from './lib/properties-provider';
+import TokenAnimationModule from './chor-js/lib/features/token-animation';
+import ChoreoTokenAnimationControls from './chor-js/lib/features/token-animation/ChoreoTokenAnimationControls';
 
 import xml from './diagrams/pizzaDelivery.bpmn';
 import blankXml from './diagrams/newDiagram.bpmn';
@@ -23,7 +25,8 @@ const modeler = new ChoreoModeler({
   // or NavigatedViewer modules of chor-js
   additionalModules: [
     PropertiesPanelModule,
-    PropertiesProviderModule
+    PropertiesProviderModule,
+    TokenAnimationModule
   ],
   keyboard: {
     bindTo: document
@@ -163,6 +166,26 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // expose bpmnjs to window for debugging purposes
 window.bpmnjs = modeler;
+
+// Inizializza i controlli di animazione
+let animationControls;
+modeler.on('import.render.complete', () => {
+  if (isValidating) {
+    reporter.validateDiagram();
+  }
+  
+  // Inizializza i controlli di animazione dopo il rendering
+  if (animationControls) {
+    animationControls.destroy();
+  }
+  
+  try {
+    const tokenAnimation = modeler.get('choreoTokenAnimation');
+    animationControls = new ChoreoTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
+  } catch (error) {
+    console.warn('Token animation not available:', error);
+  }
+});
 
 window.addEventListener('beforeunload', function(e) {
   if (isDirty) {
