@@ -1,7 +1,6 @@
-import SimpleTokenAnimation from './SimpleTokenAnimation';
+import CustomTokenAnimation from './CustomTokenAnimation';
 
 export default {
-  __init__: [ 'choreoTokenAnimation' ],
-  choreoTokenAnimation: [ 'type', SimpleTokenAnimation ]
+  __init__: [ 'customTokenAnimation' ],
+  customTokenAnimation: [ 'type', CustomTokenAnimation ]
 };
-

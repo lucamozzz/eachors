@@ -6,7 +6,7 @@ import PropertiesPanelModule from 'bpmn-js-properties-panel';
 import Reporter from './lib/validator/Validator.js';
 import PropertiesProviderModule from './lib/properties-provider';
 import TokenAnimationModule from './chor-js/lib/features/token-animation';
-import ChoreoTokenAnimationControls from './chor-js/lib/features/token-animation/ChoreoTokenAnimationControls';
+import CustomTokenAnimationControls from './chor-js/lib/features/token-animation/CustomTokenAnimationControls';
 
 import xml from './diagrams/pizzaDelivery.bpmn';
 import blankXml from './diagrams/newDiagram.bpmn';
@@ -180,8 +180,8 @@ modeler.on('import.render.complete', () => {
   }
   
   try {
-    const tokenAnimation = modeler.get('choreoTokenAnimation');
-    animationControls = new ChoreoTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
+    const tokenAnimation = modeler.get('customTokenAnimation');
+    animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
   } catch (error) {
     console.warn('Token animation not available:', error);
   }
@@ -190,7 +190,7 @@ modeler.on('import.render.complete', () => {
 window.addEventListener('beforeunload', function(e) {
   if (isDirty) {
     // see https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
-    e.preventDefault();
+    e.preventDefault( );
     e.returnValue = '';
   }
 });
