@@ -268,22 +268,45 @@ modeler.on('import.render.complete', () => {
 });
 
 
+
+
 function aggiornaSelectElementIds() {
   const select = document.getElementById('elementId');
   const elementRegistry = modeler.get('elementRegistry');
-
-  // Pulisce la select
   select.innerHTML = '';
 
-  // Aggiunge un'opzione per ogni elemento nel registry
-  elementRegistry.getAll().forEach(el => {
-    const option = document.createElement('option');
-    option.value = el.id;
-    option.textContent = `${el.id} (${el.type})`;
-    select.appendChild(option);
+  elementRegistry.getAll().forEach(element => {
+    // Considera solo elementi disegnati come SHAPE (non connection)
+    const isShape = !!element.x && !!element.y;
+    // Verifica che l'elemento abbia un nodo grafico SVG (quindi è visibile)
+    const hasGraphics = !!elementRegistry.getGraphics(element);
+
+    if (
+      isShape &&
+      hasGraphics &&
+      (
+        element.type === 'bpmn:Message' ||
+        element.type === 'bpmn:ExclusiveGateway' ||
+        element.type === 'bpmn:ParallelGateway' ||
+        element.type === 'bpmn:InclusiveGateway' ||
+        element.type === 'bpmn:EventBasedGateway'
+      )
+    ) {
+      const option = document.createElement('option');
+      option.value = element.id;
+      option.text = element.businessObject.name || element.id;
+      select.appendChild(option);
+    }
   });
 }
 
+// Chiama la funzione ogni volta che il diagramma viene caricato/renderizzato
+modeler.on('import.render.complete', () => {
+  aggiornaSelectElementIds();
+});
+modeler.on('commandStack.changed', () => {
+  aggiornaSelectElementIds();
+});
 
 bpenvModeler.render('bpenv-container');
 
