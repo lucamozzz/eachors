@@ -157,4 +157,26 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, 
   this._animationFrameId = requestAnimationFrame(animate);
 };
 
+CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
+  const overlays = this._overlays;
+  if (!overlays) {
+    console.warn("Overlays non disponibili per colorare l’elemento");
+    return;
+  }
+
+  // Rimuove l'overlay precedente di tipo 'highlight' se presente
+  overlays.remove({ element: elementId, type: 'highlight' });
+
+  // Aggiunge un nuovo overlay colorato (puoi personalizzare la posizione e stile)
+  overlays.add(elementId, 'highlight', {
+  position: {
+    top: -10,
+    left: -10
+  },
+  html: `<div style="border: 3px solid ${color}; width: 40px; height: 25px; box-sizing: border-box; pointer-events: none; border-radius: 4px;"></div>`
+});
+
+};
+
+
 CustomTokenAnimation.$inject = ["canvas", "eventBus", "elementRegistry"];

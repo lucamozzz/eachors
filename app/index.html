@@ -5,10 +5,24 @@
   <meta charset="utf-8">
   <meta http-equiv="content-type" content="text/html; charset=utf-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-
   <link rel="icon" href="favicon.ico">
   <link rel="stylesheet" type="text/css" href="styles/app.less" />
   <title>[chor-js] Demo</title>
+  <style>
+    .form-bottom-left {
+      position: absolute;
+      bottom: 80px;
+      left: 20px;
+      background: none;
+      padding: 0;
+      margin: 0;
+      border-radius: 0;
+      z-index: 10;
+    }
+    #canvas {
+      position: relative;
+    }
+  </style>
 </head>
 
 <body>
@@ -24,7 +38,22 @@
               title="Contribute on GitHub"></a>
           </li>
         </ul>
+         <!-- FORM DI TEST - INIZIO -->
+  <div class="form-bottom-left">
+    <label for="elementId" style="margin-right: 8px;">Elemento BPMN:</label>
+    <select id="elementId">
+      <option value="Message_1pam53q">Pizza Order</option>
+      <!-- Aggiungi altre opzioni qui se hai altri ID noti! -->
+    </select>
+    <input type="color" id="color" value="#FF0000" style="margin-left:8px;margin-right:8px;">
+    <button onclick="window.colorElement(
+      document.getElementById('elementId').value,
+      document.getElementById('color').value
+    )">Applica colore</button>
+  </div>
+  <!-- FORM DI TEST - FINE -->
       </div>
+
 
       <div id="panel-toggle">
         <div data-toggle-panel="properties-panel" title="Toggle properties panel"><span>Properties</span></div>
@@ -33,7 +62,6 @@
       <div id="resizer"></div>
       <div id="bpenv-container"></div>
     </div>
-
   </div>
 
   <div class="buttons djs-container">
@@ -47,9 +75,6 @@
   </div>
 
   <input id="file-input" name="name" type="file" accept=".bpmn, .xml" style="display: none;" />
-
   <script src="./app.js"></script>
-
 </body>
-
 </html>

@@ -161,6 +161,27 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isValidating) {
       reporter.validateDiagram();
     }
+    function aggiornaSelectElementIds() {
+  const select = document.getElementById('elementId');
+  const elementRegistry = modeler.get('elementRegistry');
+
+  // Pulisce la select prima di inserire nuovi elementi
+  select.innerHTML = '';
+
+  // Cicla su tutti gli elementi nel modeler e aggiunge un option per ognuno
+  elementRegistry.getAll().forEach(el => {
+    const option = document.createElement('option');
+    option.value = el.id;
+    option.textContent = `${el.id} (${el.type})`;
+    select.appendChild(option);
+  });
+}
+
+// Chiama la funzione quando il modello è stato caricato/renderizzato
+modeler.on('import.render.complete', () => {
+  aggiornaSelectElementIds();
+});
+
   });
 });
 
@@ -227,6 +248,42 @@ resizer.addEventListener('mousedown', (e) => {
   document.addEventListener('mousemove', onMouseMove);
   document.addEventListener('mouseup', onMouseUp);
 });
+
+modeler.on('import.render.complete', () => {
+  // codice già presente per inizializzare i controlli di animazione
+  try {
+    const tokenAnimation = modeler.get('customTokenAnimation');
+    animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
+
+    // Qui aggiungi il riferimento al servizio overlays
+    const overlays = modeler.get('overlays');
+    tokenAnimation._overlays = overlays;
+
+    // Espone la funzione colorElement globalmente (se già non fatto)
+    window.colorElement = (elementId, color) => tokenAnimation.colorElement(elementId, color);
+
+  } catch (error) {
+    console.warn('Token animation not available:', error);
+  }
+});
+
+
+function aggiornaSelectElementIds() {
+  const select = document.getElementById('elementId');
+  const elementRegistry = modeler.get('elementRegistry');
+
+  // Pulisce la select
+  select.innerHTML = '';
+
+  // Aggiunge un'opzione per ogni elemento nel registry
+  elementRegistry.getAll().forEach(el => {
+    const option = document.createElement('option');
+    option.value = el.id;
+    option.textContent = `${el.id} (${el.type})`;
+    select.appendChild(option);
+  });
+}
+
 
 bpenvModeler.render('bpenv-container');
 
