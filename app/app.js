@@ -289,7 +289,9 @@ function aggiornaSelectElementIds() {
         element.type === 'bpmn:ExclusiveGateway' ||
         element.type === 'bpmn:ParallelGateway' ||
         element.type === 'bpmn:InclusiveGateway' ||
-        element.type === 'bpmn:EventBasedGateway'
+        element.type === 'bpmn:EventBasedGateway' ||
+        element.type === 'bpmn:StartEvent' ||
+        element.type === 'bpmn:EndEvent'
       )
     ) {
       const option = document.createElement('option');
