@@ -158,24 +158,41 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, 
 };
 
 CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
+  // Prova a colorare direttamente il simbolo SVG
+  const element = this._elementRegistry.get(elementId);
+  if (!element) return;
+
+  const gfx = this._elementRegistry.getGraphics(element);
+    if (gfx) {
+    // Usa il colore scelto per il bordo, ma trasparente per il riempimento
+    let fillColor = color;
+    // Se il colore è in formato esadecimale, converti in rgba con trasparenza
+    if (/^#([A-Fa-f0-9]{6})$/.test(color)) {
+      const r = parseInt(color.substr(1,2),16);
+      const g = parseInt(color.substr(3,2),16);
+      const b = parseInt(color.substr(5,2),16);
+      fillColor = `rgba(${r},${g},${b},0.3)`;
+    }
+    gfx.querySelectorAll('rect, path, polygon, ellipse, circle').forEach(node => {
+      node.setAttribute('stroke', color); // bordo opaco
+      node.setAttribute('fill', fillColor);   // interno trasparente
+      node.style.stroke = color;
+      node.style.fill = fillColor;
+    });
+    return;
+  }
+
+ // Fallback overlay (puoi anche qui usare rgba)
   const overlays = this._overlays;
   if (!overlays) {
     console.warn("Overlays non disponibili per colorare l’elemento");
     return;
   }
-
-  // Rimuove l'overlay precedente di tipo 'highlight' se presente
   overlays.remove({ element: elementId, type: 'highlight' });
-
-  // Aggiunge un nuovo overlay colorato (puoi personalizzare la posizione e stile)
   overlays.add(elementId, 'highlight', {
-  position: {
-    top: -10,
-    left: -10
-  },
-  html: `<div style="border: 3px solid ${color}; width: 40px; height: 25px; box-sizing: border-box; pointer-events: none; border-radius: 4px;"></div>`
-});
-
+    position: { top: -10, left: -10 },
+    html: `<div style="border: 3px solid ${color}; background: rgba(255,0,0,0.3); width: 40px; height: 25px; box-sizing: border-box; pointer-events: none; border-radius: 4px;"></div>`
+  });
 };
 
 

@@ -300,6 +300,7 @@ function aggiornaSelectElementIds() {
   });
 }
 
+
 // Chiama la funzione ogni volta che il diagramma viene caricato/renderizzato
 modeler.on('import.render.complete', () => {
   aggiornaSelectElementIds();
