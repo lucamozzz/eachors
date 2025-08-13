@@ -261,6 +261,10 @@ modeler.on('import.render.complete', () => {
 
     // Espone la funzione colorElement globalmente (se già non fatto)
     window.colorElement = (elementId, color) => tokenAnimation.colorElement(elementId, color);
+    
+    // Espone la funzione animateEdge globalmente
+    window.animateEdge = tokenAnimation.animateEdge.bind(tokenAnimation);
+
 
   } catch (error) {
     console.warn('Token animation not available:', error);
@@ -303,6 +307,7 @@ function aggiornaSelectElementIds() {
 }
 
 
+
 // Chiama la funzione ogni volta che il diagramma viene caricato/renderizzato
 modeler.on('import.render.complete', () => {
   aggiornaSelectElementIds();
@@ -311,6 +316,29 @@ modeler.on('commandStack.changed', () => {
   aggiornaSelectElementIds();
 });
 
+function aggiornaSelectEdgeIds() {
+  const select = document.getElementById('edgeId');
+  if (!select) return;
+  const elementRegistry = window.bpmnjs.get('elementRegistry');
+  select.innerHTML = '';
+  elementRegistry.getAll().forEach(element => {
+    if (element.type === 'bpmn:SequenceFlow') {
+      const option = document.createElement('option');
+      option.value = element.id;
+      option.text = element.businessObject.name || element.id;
+      select.appendChild(option);
+    }
+  });
+}
+
+
+
+modeler.on('import.render.complete', () => {
+  aggiornaSelectEdgeIds();
+});
+modeler.on('commandStack.changed', () => {
+  aggiornaSelectEdgeIds();
+});
 bpenvModeler.render('bpenv-container');
 
 renderModel(xml);

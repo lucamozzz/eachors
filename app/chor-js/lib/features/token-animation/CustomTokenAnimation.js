@@ -182,7 +182,7 @@ CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
     return;
   }
 
- // Fallback overlay (puoi anche qui usare rgba)
+ // Fallback overlay 
   const overlays = this._overlays;
   if (!overlays) {
     console.warn("Overlays non disponibili per colorare l’elemento");
@@ -194,6 +194,63 @@ CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
     html: `<div style="border: 3px solid ${color}; background: rgba(255,0,0,0.3); width: 40px; height: 25px; box-sizing: border-box; pointer-events: none; border-radius: 4px;"></div>`
   });
 };
+
+CustomTokenAnimation.prototype.animateEdge = function(edgeId) {
+  this.reset(); // Ferma eventuali animazioni precedenti
+
+  const edge = this._elementRegistry.get(edgeId);
+  if (!edge || !edge.waypoints) {
+    console.warn("Edge non trovato o senza waypoints:", edgeId);
+    return;
+  }
+
+  this._isPlaying = true;
+  this._currentSequenceFlow = edge;
+  this._currentWaypointIndex = 0;
+
+  if (!this._animationToken) {
+    this._animationToken = this._createTokenGfx();
+  }
+
+  let startTime = null;
+  const duration = ANIMATION_DURATION_BASE / this._speed;
+  const waypoints = edge.waypoints;
+
+  const animate = (currentTime) => {
+    if (!this._isPlaying) return;
+
+    if (!startTime) startTime = currentTime;
+    const progress = (currentTime - startTime) / duration;
+
+    if (progress < 1) {
+      const totalSegments = waypoints.length - 1;
+      const segmentProgress = progress * totalSegments;
+      const currentSegment = Math.floor(segmentProgress);
+      const segmentRatio = segmentProgress - currentSegment;
+
+      const startPoint = waypoints[currentSegment];
+      const endPoint = waypoints[currentSegment + 1];
+
+      const x = startPoint.x + (endPoint.x - startPoint.x) * segmentRatio;
+      const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
+
+      svgAttr(
+        this._animationToken,
+        "transform",
+        `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
+      );
+
+      this._animationFrameId = requestAnimationFrame(animate);
+    } else {
+      // Fine animazione su questo edge
+      this.reset();
+    }
+  };
+
+  this._animationFrameId = requestAnimationFrame(animate);
+};
+
+
 
 
 CustomTokenAnimation.$inject = ["canvas", "eventBus", "elementRegistry"];

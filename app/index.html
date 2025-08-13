@@ -52,6 +52,15 @@
     )">Applica colore</button>
   </div>
   <!-- FORM DI TEST - FINE -->
+
+  <!-- Form per animare un edge -->
+<div class="form-bottom-left" style="bottom: 120px;">
+  <label for="edgeId" style="margin-right: 8px;">Sequence Flow:</label>
+  <select id="edgeId">
+    <!-- Le opzioni verranno popolate via JS -->
+  </select>
+  <button onclick="window.animateEdge(document.getElementById('edgeId').value)">Anima edge</button>
+</div>
       </div>
 
 
