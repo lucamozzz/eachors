@@ -161,21 +161,6 @@ document.addEventListener('DOMContentLoaded', () => {
     if (isValidating) {
       reporter.validateDiagram();
     }
-    function aggiornaSelectElementIds() {
-  const select = document.getElementById('elementId');
-  const elementRegistry = modeler.get('elementRegistry');
-
-  // Pulisce la select prima di inserire nuovi elementi
-  select.innerHTML = '';
-
-  // Cicla su tutti gli elementi nel modeler e aggiunge un option per ognuno
-  elementRegistry.getAll().forEach(el => {
-    const option = document.createElement('option');
-    option.value = el.id;
-    option.textContent = `${el.id} (${el.type})`;
-    select.appendChild(option);
-  });
-}
 
 // Chiama la funzione quando il modello è stato caricato/renderizzato
 modeler.on('import.render.complete', () => {
@@ -249,31 +234,11 @@ resizer.addEventListener('mousedown', (e) => {
   document.addEventListener('mouseup', onMouseUp);
 });
 
-modeler.on('import.render.complete', () => {
-  // codice già presente per inizializzare i controlli di animazione
-  try {
-    const tokenAnimation = modeler.get('customTokenAnimation');
-    animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
-
-    // Qui aggiungi il riferimento al servizio overlays
-    const overlays = modeler.get('overlays');
-    tokenAnimation._overlays = overlays;
-
-    // Espone la funzione colorElement globalmente (se già non fatto)
-    window.colorElement = (elementId, color) => tokenAnimation.colorElement(elementId, color);
-    
-    // Espone la funzione animateEdge globalmente
-    window.animateEdge = tokenAnimation.animateEdge.bind(tokenAnimation);
-
-
-  } catch (error) {
-    console.warn('Token animation not available:', error);
-  }
-});
 
 
 
 
+// Funzione per aggiornare la select degli elementi BPMN (messaggi, gateway, eventi, ecc.)
 function aggiornaSelectElementIds() {
   const select = document.getElementById('elementId');
   const elementRegistry = modeler.get('elementRegistry');
@@ -306,16 +271,7 @@ function aggiornaSelectElementIds() {
   });
 }
 
-
-
-// Chiama la funzione ogni volta che il diagramma viene caricato/renderizzato
-modeler.on('import.render.complete', () => {
-  aggiornaSelectElementIds();
-});
-modeler.on('commandStack.changed', () => {
-  aggiornaSelectElementIds();
-});
-
+// Funzione per aggiornare la select dei sequence flow (edge)
 function aggiornaSelectEdgeIds() {
   const select = document.getElementById('edgeId');
   if (!select) return;
@@ -331,14 +287,40 @@ function aggiornaSelectEdgeIds() {
   });
 }
 
-
-
+// Listener che aggiorna le select e inizializza le API dopo il caricamento del diagramma
 modeler.on('import.render.complete', () => {
+  aggiornaSelectElementIds();
   aggiornaSelectEdgeIds();
+  if (isValidating) {
+    reporter.validateDiagram();
+  }
+  try {
+    // Ottieni l'istanza dell'animazione token e inizializza i controlli
+    const tokenAnimation = modeler.get('customTokenAnimation');
+    animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
+    // Collega il servizio overlays all'animazione token
+    const overlays = modeler.get('overlays');
+    tokenAnimation._overlays = overlays;
+    // Espone le API di colorazione e animazione edge globalmente (per l'HTML)
+    window.colorElement = (elementId, color) => tokenAnimation.colorElement(elementId, color);
+    window.animateEdge = tokenAnimation.animateEdge.bind(tokenAnimation);
+  } catch (error) {
+    console.warn('Token animation not available:', error);
+  }
 });
+
+// Listener che aggiorna le select e valida il diagramma dopo ogni modifica
 modeler.on('commandStack.changed', () => {
+  aggiornaSelectElementIds();
   aggiornaSelectEdgeIds();
+  if (isValidating) {
+    reporter.validateDiagram();
+  }
+  isDirty = true;
 });
+
+// Renderizza il modellatore BPEnv nella colonna di destra
 bpenvModeler.render('bpenv-container');
 
+// Carica e visualizza il diagramma BPMN di default all'avvio
 renderModel(xml);
