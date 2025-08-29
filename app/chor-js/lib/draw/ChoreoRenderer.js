@@ -119,6 +119,19 @@ export default function ChoreoRenderer(config, eventBus, textRenderer, pathMap) 
       svgAppend(p, label);
     }
 
+    // Add message type icon
+    let messageType = element.businessObject.get('messageType') || 'base';
+    if (messageType !== 'base') {
+      let icon = createMessageTypeIcon(messageType);
+      if (icon) {
+        // Position the icon next to the message envelope
+        svgAttr(icon, {
+          transform: `translate(${element.width + 5}, ${element.height / 2 - 8})`
+        });
+        svgAppend(p, icon);
+      }
+    }
+
     return p;
   };
 
@@ -498,4 +511,44 @@ function drawRect(parentGfx, width, height, attrs) {
   svgAttr(rect, attrs);
   svgAppend(parentGfx, rect);
   return rect;
+}
+
+
+function createMessageTypeIcon(messageType) {
+  let iconSvg;
+
+  if (messageType === 'movement') {
+    // Arrow Right Circle Fill (Bootstrap Icons - MIT)
+    iconSvg = svgCreate('svg');
+    svgAttr(iconSvg, { width: '16', height: '16', viewBox: '0 0 16 16' });
+
+    const path = svgCreate('path');
+    // cerchio pieno
+    svgAttr(path, {
+      d: 'M8 0a8 8 0 1 1 0 16A8 8 0 0 1 8 0'
+    });
+    svgAttr(path, { fill: 'currentColor' });
+    svgAppend(iconSvg, path);
+
+    // freccia bianca
+    const arrow = svgCreate('path');
+    svgAttr(arrow, {
+      d: 'M4.5 7.5a.5.5 0 0 0 0 1h5.793l-2.147 2.146a.5.5 0 0 0 .708.708l3-3a.5.5 0 0 0 0-.708l-3-3a.5.5 0 1 0-.708.708L10.293 7.5z',
+      fill: 'white'
+    });
+    svgAppend(iconSvg, arrow);
+
+  } else if (messageType === 'environmental') {
+    // globo outline
+    iconSvg = svgCreate('svg');
+    svgAttr(iconSvg, { width: '16', height: '16', viewBox: '0 0 16 16' });
+    const circle = svgCreate('circle');
+    svgAttr(circle, { cx: '8', cy: '8', r: '6', stroke: 'currentColor', strokeWidth: '2', fill: 'none' });
+    const lines = svgCreate('path');
+    svgAttr(lines, { d: 'M2 8h12M8 2a15.3 15.3 0 0 1 4 6 15.3 15.3 0 0 1-4 6 15.3 15.3 0 0 1-4-6 15.3 15.3 0 0 1 4-6z', stroke: 'currentColor', strokeWidth: '2', fill: 'none' });
+    svgAppend(iconSvg, circle);
+    svgAppend(iconSvg, lines);
+  }
+
+  return iconSvg || null;
 }

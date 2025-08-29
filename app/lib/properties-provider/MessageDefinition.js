@@ -5,8 +5,7 @@ import cmdHelper from 'bpmn-js-properties-panel/lib/helper/CmdHelper';
 
 export default function MessageDefinition(group, element, bpmnFactory, messageEventDefinition) {
 
-  // Technically, the eventDefinitionReference function is only meant for events, however, it works well for our purpose, too.
-  // I currently see no reason to duplicate ~100 lines of code, however, it might break in future versions of the panel-provider
+  
   group.entries = group.entries.concat(eventDefinitionReference(element, messageEventDefinition, bpmnFactory, {
     label: 'Item Definition',
     elementName: 'item-def',
@@ -23,7 +22,30 @@ export default function MessageDefinition(group, element, bpmnFactory, messageEv
     shouldValidate: false
   }));
 
+  function createMessageTypeSelect() {
+  const MODEL_PROP = 'messageType';
+  const entry = entryFactory.selectBox({
+    id: 'message-type',
+    label: 'Message Type',
+    modelProperty: MODEL_PROP,
+    selectOptions: [
+      { value: 'base', name: 'Base' },
+      { value: 'movement', name: 'Movement' },
+      { value: 'environmental', name: 'Environmental' }
+    ],
+    get: function(el) {
+      const bo = el.businessObject;
+      return { [MODEL_PROP]: (bo && bo.get) ? (bo.get(MODEL_PROP) || 'base') : 'base' };
+    },
+    set: function(el, values) {
+      const bo = el.businessObject;
+      return cmdHelper.updateBusinessObject(el, bo, { [MODEL_PROP]: values[MODEL_PROP] || 'base' });
+    }
+  });
+  return [ entry ];
+}
   group.entries = group.entries.concat(createStructureRefTextField());
+  group.entries = group.entries.concat(createMessageTypeSelect());
 
 }
 
