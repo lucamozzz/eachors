@@ -1,0 +1,15 @@
+{
+"name": "MessageType",
+"uri": "http://example.com/schema/bpmn/message-type",
+"prefix": "msg",
+"xml": { "tagAlias": "lowerCase" },
+"types": [
+{
+"name": "TypedMessage",
+"extends": [ "bpmn:Message" ],
+"properties": [
+{ "name": "messageType", "isAttr": true, "type": "String" }
+]
+}
+]
+}

@@ -10,6 +10,8 @@ import CustomTokenAnimationControls from './chor-js/lib/features/token-animation
 
 import xml from './diagrams/pizzaDelivery.bpmn';
 import blankXml from './diagrams/newDiagram.bpmn';
+import messageTypeModdle from './chor-js/extension.json';
+
 
 let lastFile;
 let isValidating = false;
@@ -30,7 +32,10 @@ const modeler = new ChoreoModeler({
   ],
   keyboard: {
     bindTo: document
-  }
+  },
+  moddleExtensions: {
+msg: messageTypeModdle
+}
 });
 
 // display the given model (XML representation)
