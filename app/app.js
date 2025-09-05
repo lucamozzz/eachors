@@ -11,6 +11,30 @@ import CustomTokenAnimationControls from './chor-js/lib/features/token-animation
 import xml from './diagrams/pizzaDelivery.bpmn';
 import blankXml from './diagrams/newDiagram.bpmn';
 import messageTypeModdle from './chor-js/extension.json';
+import studentData from './chor-js/student.json';
+
+
+// Modulo DI che fornisce getPlaces
+const PlacesModule = {
+  __init__: [ 'placesInit' ],
+  placesInit: [ 'type', function() {} ],
+  getPlaces: [ 'value', function getPlaces() {
+    try {
+      const fromImport = (typeof studentData !== 'undefined' && studentData && Array.isArray(studentData.places))
+        ? studentData.places
+        : null;
+      const fromWindow = (window.studentData && Array.isArray(window.studentData.places))
+        ? window.studentData.places
+        : null;
+      const places = fromImport || fromWindow || [];
+      return places.map(p => ({ id: p.id, name: p.name || p.id }));
+    } catch (e) {
+      console.warn('getPlaces error:', e);
+      return [];
+    }
+  } ]
+};
+
 
 
 let lastFile;
@@ -26,6 +50,7 @@ const modeler = new ChoreoModeler({
   // remove the properties' panel if you use the Viewer
   // or NavigatedViewer modules of chor-js
   additionalModules: [
+    PlacesModule, 
     PropertiesPanelModule,
     PropertiesProviderModule,
     TokenAnimationModule

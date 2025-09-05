@@ -7,64 +7,76 @@ import eventDefinitionHelper from 'bpmn-js-properties-panel/lib/helper/EventDefi
 import conditionalProps from 'bpmn-js-properties-panel/lib/provider/camunda/parts/ConditionalProps.js';
 import messageDefinition from './MessageDefinition';
 
-export default function ChorPropertiesProvider(injector, bpmnFactory) {
-
+export default function ChorPropertiesProvider(injector, bpmnFactory, getPlaces) {
   injector.invoke(BpmnPropertiesProvider, this);
-
   const superGetTabs = this.getTabs;
 
   this.getTabs = function(element) {
-    let generalTab = superGetTabs.call(this, element);
-    const detailsGroup = generalTab[0].groups.filter(g => g.id === 'details')[0];
+    const tabs = superGetTabs.call(this, element);
+
+    // primo tab (General)
+    const general = Array.isArray(tabs) ? tabs[0] : null;
+    if (!general) return tabs;
+
+    // gruppo 'details'
+    const detailsGroup = Array.isArray(general.groups)
+      ? general.groups.filter(g => g.id === 'details')[0]
+      : null;
+    if (!detailsGroup) return tabs;
+
+    // Event: conditional / message
     if (is(element, 'bpmn:Event')) {
-      // Conditional Events show Camunda specific options, we have to filter those
-      if (element.businessObject.eventDefinitions) {
-        const definition = element.businessObject.eventDefinitions[0];
-        if (definition.$type === 'bpmn:ConditionalEventDefinition') {
-          detailsGroup.entries = [];
-          this.conditionalEvent(detailsGroup, element);
-        }
+      const defs = element.businessObject.eventDefinitions || [];
+      const def0 = defs[0];
+
+      if (def0 && def0.$type === 'bpmn:ConditionalEventDefinition') {
+        detailsGroup.entries = [];
+        this.conditionalEvent(detailsGroup, element);
+        return tabs;
+      }
+
+      if (def0 && def0.$type === 'bpmn:MessageEventDefinition') {
+        // usa sempre element.businessObject per mantenere Message Type
+        messageDefinition(detailsGroup, element, bpmnFactory, element.businessObject, getPlaces);
+        return tabs;
       }
     }
+
+    // Aggiungi le proprietà Camunda per conditional events
     conditionalProps(detailsGroup, element, bpmnFactory, e => e);
+
+    // bpmn:Message standalone
     if (is(element, 'bpmn:Message')) {
-      messageDefinition(detailsGroup, element, bpmnFactory, element.businessObject);
+      messageDefinition(detailsGroup, element, bpmnFactory, element.businessObject, getPlaces);
     }
-    return generalTab;
+
+    return tabs;
   };
-
-  ChorPropertiesProvider.prototype.conditionalEvent = function(group, element) {
-    const getValue = function(conditionalEvent, node) {
-
-      const conditionalEventDefinition = eventDefinitionHelper.getConditionalEventDefinition(conditionalEvent);
-      return {
-        condition: conditionalEventDefinition.condition.body
-      };
-    };
-
-    const setValue = function(conditionalEvent, values) {
-
-      const conditionalEventDefinition = eventDefinitionHelper.getConditionalEventDefinition(conditionalEvent);
-      const condition = conditionalEventDefinition.condition;
-
-      return cmdHelper.updateBusinessObject(conditionalEvent, condition, { body: values.condition });
-    };
-
-    group.entries.push(entryFactory.textField({
-      id: 'condition',
-      label: 'Condition Expression',
-      modelProperty: 'condition',
-
-      get: getValue,
-      set: setValue
-    }));
-  };
-
 }
 
-inherits(ChorPropertiesProvider, BpmnPropertiesProvider);
+ChorPropertiesProvider.prototype.conditionalEvent = function(group, element) {
+  const getValue = function(conditionalEvent) {
+    const def = eventDefinitionHelper.getConditionalEventDefinition(conditionalEvent);
+    return { condition: def.condition.body };
+  };
+  const setValue = function(conditionalEvent, values) {
+    const def = eventDefinitionHelper.getConditionalEventDefinition(conditionalEvent);
+    const condition = def.condition;
+    return cmdHelper.updateBusinessObject(conditionalEvent, condition, { body: values.condition });
+  };
+  group.entries.push(entryFactory.textField({
+    id: 'condition',
+    label: 'Condition Expression',
+    modelProperty: 'condition',
+    get: getValue,
+    set: setValue
+  }));
+};
+
 ChorPropertiesProvider.$inject = [
   'injector',
-  'bpmnFactory'
+  'bpmnFactory',
+  'getPlaces' // <-- nuova dipendenza
 ];
 
+inherits(ChorPropertiesProvider, BpmnPropertiesProvider);
