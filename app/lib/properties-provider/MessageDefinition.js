@@ -108,4 +108,50 @@ export default function MessageDefinition(group, element, bpmnFactory, messageEv
   // Sempre disponibili su bpmn:Message (o messaggio referenziato)
   group.entries = group.entries.concat(createMessageTypeSelect());
   group.entries = group.entries.concat(createDestinationSelect());
+
+  // GUARD FIELD
+group.entries.push(entryFactory.textField({
+  id: "message-guard",
+  label: "Guard condition (if ...)",
+  modelProperty: "guard",
+  get: function(el) {
+    const bo = el.businessObject;
+    return { guard: bo.get ? (bo.get("guard") || "") : "" };
+  },
+  set: function(el, values) {
+    const bo = el.businessObject;
+    return cmdHelper.updateBusinessObject(el, bo, { guard: values.guard || "" });
+  }
+}));
+
+// ASSIGNMENTS (multiple row text fields)
+group.entries.push(entryFactory.table({
+  id: 'message-assignments',
+  modelProperties: ['attribute', 'value'],
+  labels: ['Attribute', 'Value'],
+  addLabel: 'Add Assignment',
+  getElements: function(element) {
+    const bo = element.businessObject;
+    return bo.assignments || [];
+  },
+  addElement: function(element) {
+    const bo = element.businessObject;
+    let assignments = [].concat(bo.assignments || []);
+    assignments.push({ attribute: "", value: "" });
+    return cmdHelper.updateBusinessObject(element, bo, { assignments: assignments });
+  },
+  updateElement: function(element, value, idx) {
+    const bo = element.businessObject;
+    let assignments = [].concat(bo.assignments || []);
+    assignments[idx] = value;
+    return cmdHelper.updateBusinessObject(element, bo, { assignments: assignments });
+  },
+  removeElement: function(element, idx) {
+    const bo = element.businessObject;
+    let assignments = [].concat(bo.assignments || []);
+    assignments.splice(idx, 1);
+    return cmdHelper.updateBusinessObject(element, bo, { assignments: assignments });
+  }
+}));
+
 }
