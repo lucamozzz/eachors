@@ -42,6 +42,24 @@ export default function ChorPropertiesProvider(injector, bpmnFactory, getPlaces)
       }
     }
 
+    // Solo per SequenceFlow
+    if (is(element, 'bpmn:SequenceFlow')) {
+      detailsGroup.entries.push(entryFactory.textField({
+        id: 'sequence-flow-guard',
+        label: 'Guard Condition',
+        modelProperty: 'guard',
+        get: function(el) {
+          const bo = el.businessObject;
+          return { guard: bo.get ? (bo.get('guard') || '') : '' };
+        },
+        set: function(el, values) {
+          const bo = el.businessObject;
+          return cmdHelper.updateBusinessObject(el, bo, { guard: values.guard || '' });
+        }
+      }));
+      return tabs;
+    }
+    
     // Aggiungi le proprietà Camunda per conditional events
     conditionalProps(detailsGroup, element, bpmnFactory, e => e);
 

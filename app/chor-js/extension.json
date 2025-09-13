@@ -15,6 +15,13 @@
       ]
     },
     {
+      "name": "GuardedSequenceFlow",
+      "extends": [ "bpmn:SequenceFlow" ],
+      "properties": [
+        { "name": "guard", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
       "name": "Assignment",
       "superClass": [ "Element" ],
       "properties": [
