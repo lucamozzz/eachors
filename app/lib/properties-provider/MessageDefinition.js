@@ -124,34 +124,73 @@ group.entries.push(entryFactory.textField({
   }
 }));
 
+
 // ASSIGNMENTS (multiple row text fields)
 group.entries.push(entryFactory.table({
   id: 'message-assignments',
   modelProperties: ['attribute', 'value'],
   labels: ['Attribute', 'Value'],
   addLabel: 'Add Assignment',
+
   getElements: function(element) {
     const bo = element.businessObject;
+    // Assicurati che 'assignments' sia sempre un array
     return bo.assignments || [];
   },
-  addElement: function(element) {
+
+  addElement: function(element, rootElement) {
     const bo = element.businessObject;
-    let assignments = [].concat(bo.assignments || []);
-    assignments.push({ attribute: "", value: "" });
-    return cmdHelper.updateBusinessObject(element, bo, { assignments: assignments });
+    const newAssignment = bpmnFactory.create('msg:Assignment', {
+      attribute: 'place.attribute', // Valore di default
+      value: 'newValue'           // Valore di default
+    });
+
+    // FONDAMENTALE: Imposta il parent del nuovo elemento prima di aggiungerlo.
+    // Il businessObject (il messaggio) è il genitore del nuovo assignment.
+    newAssignment.$parent = bo;
+
+    const currentAssignments = bo.get('assignments') || [];
+
+    // Aggiorna il businessObject con la nuova lista di assignments
+    return cmdHelper.updateBusinessObject(element, bo, {
+      assignments: [ ...currentAssignments, newAssignment ]
+    });
   },
-  updateElement: function(element, value, idx) {
+
+  updateElement: function(element, values, node, idx) {
     const bo = element.businessObject;
-    let assignments = [].concat(bo.assignments || []);
-    assignments[idx] = value;
-    return cmdHelper.updateBusinessObject(element, bo, { assignments: assignments });
+    const assignment = bo.assignments[idx];
+
+    // Se l'elemento non esiste, non fare nulla (sicurezza)
+    if (!assignment) {
+      console.error('updateElement: assignment non trovato all’indice', idx);
+      return;
+    }
+
+    // Aggiorna le proprietà direttamente sull'oggetto 'assignment' esistente.
+    // Il primo argomento di updateBusinessObject è l'elemento del diagramma,
+    // il secondo è l'oggetto del modello da modificare (in questo caso, l'assignment specifico).
+    return cmdHelper.updateBusinessObject(element, assignment, {
+      attribute: values.attribute || undefined,
+      value: values.value || undefined
+    });
   },
-  removeElement: function(element, idx) {
+
+  removeElement: function(element, node, idx) {
     const bo = element.businessObject;
-    let assignments = [].concat(bo.assignments || []);
-    assignments.splice(idx, 1);
-    return cmdHelper.updateBusinessObject(element, bo, { assignments: assignments });
+    const currentAssignments = bo.get('assignments') || [];
+
+    // Rimuovi l'elemento all'indice specificato
+    currentAssignments.splice(idx, 1);
+
+    // Aggiorna il businessObject con la lista modificata
+    return cmdHelper.updateBusinessObject(element, bo, {
+      assignments: currentAssignments
+    });
   }
 }));
+
+
+
 
 }
