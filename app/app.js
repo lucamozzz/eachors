@@ -63,6 +63,21 @@ msg: messageTypeModdle
 }
 });
 
+
+const eventBus = modeler.get('eventBus');
+
+eventBus.on('selection.changed', function(event) {
+  const newlySelected = event.newSelection && event.newSelection[0];
+  if (newlySelected && newlySelected.type === 'bpmn:Message') {
+    // Il pannello delle proprietà si aggiorna già da solo su nuova selezione,
+    // ma qui puoi forzare tab oppure mostrare il pannello se serve
+    const propertiesPanelElement = document.getElementById('properties-panel');
+    if (propertiesPanelElement) {
+      propertiesPanelElement.classList.remove('hidden');
+    }
+  }
+});
+
 // display the given model (XML representation)
 async function renderModel(newXml) {
   await modeler.importXML(newXml);

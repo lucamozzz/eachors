@@ -60,6 +60,27 @@ export default function ChorPropertiesProvider(injector, bpmnFactory, getPlaces)
       return tabs;
     }
     
+    if (is(element, 'bpmn:Participant')) {
+  detailsGroup.entries.push(entryFactory.selectBox({
+    id: 'participant-StartingPlace',
+    label: 'Starting Place',
+    modelProperty: 'participantPlace', // qui scegli nome property custom
+    selectOptions: (typeof getPlaces === 'function' ? (getPlaces() || []).map(p => ({
+      value: p.id,
+      name: p.name ? `${p.name} (${p.id})` : p.id
+    })) : []),
+    get: function(el) {
+      const bo = el.businessObject;
+      return { participantPlace: (bo && bo.get) ? (bo.get('participantPlace') || '') : '' };
+    },
+    set: function(el, values) {
+      const bo = el.businessObject;
+      return cmdHelper.updateBusinessObject(el, bo, { participantPlace: values.participantPlace || '' });
+    }
+  }));
+  return tabs;
+}
+
     // Aggiungi le proprietà Camunda per conditional events
     conditionalProps(detailsGroup, element, bpmnFactory, e => e);
 
