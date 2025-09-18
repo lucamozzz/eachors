@@ -12,19 +12,19 @@ CustomTokenAnimationControls.prototype._createControls = function () {
   // Create the controls container
   this._controlsContainer = document.createElement("div");
   this._controlsContainer.className = "token-animation-controls";
-  this._controlsContainer.style.cssText = `
-    position: fixed;
-    top: 10px;
-    right: 10px;
-    background: white;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    padding: 10px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    z-index: 1000;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-  `;
+this._controlsContainer.style.cssText = `
+  background: white;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  padding: 10px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  margin-bottom: 10px;
+  display: inline-block;
+`;
+
+
 
   // Create title
   const title = document.createElement("h4");
@@ -107,8 +107,18 @@ CustomTokenAnimationControls.prototype._createControls = function () {
 
   this._controlsContainer.appendChild(speedContainer);
 
-  // Add to document
+// Inserisci prima del primo .form-bottom-left (i form di comando in fondo al canvas)
+const canvasContainer = document.getElementById('canvas');
+const firstForm = canvasContainer.querySelector('.form-bottom-left');
+if (firstForm) {
+  canvasContainer.insertBefore(this._controlsContainer, firstForm);
+} else if (canvasContainer) {
+  canvasContainer.appendChild(this._controlsContainer);
+} else {
   document.body.appendChild(this._controlsContainer);
+}
+
+
 };
 
 CustomTokenAnimationControls.prototype._bindEvents = function () {

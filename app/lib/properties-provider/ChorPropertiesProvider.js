@@ -7,7 +7,8 @@ import eventDefinitionHelper from 'bpmn-js-properties-panel/lib/helper/EventDefi
 import conditionalProps from 'bpmn-js-properties-panel/lib/provider/camunda/parts/ConditionalProps.js';
 import messageDefinition from './MessageDefinition';
 
-export default function ChorPropertiesProvider(injector, bpmnFactory, getPlaces) {
+
+export default function ChorPropertiesProvider(injector, bpmnFactory) {
   injector.invoke(BpmnPropertiesProvider, this);
   const superGetTabs = this.getTabs;
 
@@ -37,7 +38,7 @@ export default function ChorPropertiesProvider(injector, bpmnFactory, getPlaces)
 
       if (def0 && def0.$type === 'bpmn:MessageEventDefinition') {
         // usa sempre element.businessObject per mantenere Message Type
-        messageDefinition(detailsGroup, element, bpmnFactory, element.businessObject, getPlaces);
+        messageDefinition(detailsGroup, element, bpmnFactory, element.businessObject, getDynamicPlaces);
         return tabs;
       }
     }
@@ -61,36 +62,45 @@ export default function ChorPropertiesProvider(injector, bpmnFactory, getPlaces)
     }
     
     if (is(element, 'bpmn:Participant')) {
-  detailsGroup.entries.push(entryFactory.selectBox({
-    id: 'participant-StartingPlace',
-    label: 'Starting Place',
-    modelProperty: 'participantPlace', // qui scegli nome property custom
-    selectOptions: (typeof getPlaces === 'function' ? (getPlaces() || []).map(p => ({
-      value: p.id,
-      name: p.name ? `${p.name} (${p.id})` : p.id
-    })) : []),
-    get: function(el) {
-      const bo = el.businessObject;
-      return { participantPlace: (bo && bo.get) ? (bo.get('participantPlace') || '') : '' };
-    },
-    set: function(el, values) {
-      const bo = el.businessObject;
-      return cmdHelper.updateBusinessObject(el, bo, { participantPlace: values.participantPlace || '' });
+      detailsGroup.entries.push(entryFactory.selectBox({
+        id: 'participant-StartingPlace',
+        label: 'Starting Place',
+        modelProperty: 'participantPlace',
+        selectOptions: getDynamicPlaces(),
+        get: function(el) {
+          const bo = el.businessObject;
+          return { participantPlace: (bo && bo.get) ? (bo.get('participantPlace') || '') : '' };
+        },
+        set: function(el, values) {
+          const bo = el.businessObject;
+          return cmdHelper.updateBusinessObject(el, bo, { participantPlace: values.participantPlace || '' });
+        }
+      }));
+      return tabs;
     }
-  }));
-  return tabs;
-}
 
     // Aggiungi le proprietà Camunda per conditional events
     conditionalProps(detailsGroup, element, bpmnFactory, e => e);
 
     // bpmn:Message standalone
     if (is(element, 'bpmn:Message')) {
-      messageDefinition(detailsGroup, element, bpmnFactory, element.businessObject, getPlaces);
+      messageDefinition(detailsGroup, element, bpmnFactory, element.businessObject, getDynamicPlaces);
     }
 
     return tabs;
   };
+
+  function getDynamicPlaces() {
+  if (typeof window.bpenvModeler?.getPhysicalPlaces === 'function') {
+    const rawPlaces = window.bpenvModeler.getPhysicalPlaces();
+    return rawPlaces.map(p => ({
+      value: p.id,             // usa direttamente id (non p.get('id'))
+      name: p.name || p.id     // se manca name, mostra l'id
+    }));
+  }
+  return [];
+}
+
 }
 
 ChorPropertiesProvider.prototype.conditionalEvent = function(group, element) {
@@ -114,8 +124,7 @@ ChorPropertiesProvider.prototype.conditionalEvent = function(group, element) {
 
 ChorPropertiesProvider.$inject = [
   'injector',
-  'bpmnFactory',
-  'getPlaces' // <-- nuova dipendenza
+  'bpmnFactory'
 ];
 
 inherits(ChorPropertiesProvider, BpmnPropertiesProvider);

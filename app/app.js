@@ -13,27 +13,9 @@ import blankXml from './diagrams/newDiagram.bpmn';
 import messageTypeModdle from './chor-js/extension.json';
 import studentData from './chor-js/student.json';
 
-
+window.bpenvModeler = bpenvModeler;
 // Modulo DI che fornisce getPlaces
-const PlacesModule = {
-  __init__: [ 'placesInit' ],
-  placesInit: [ 'type', function() {} ],
-  getPlaces: [ 'value', function getPlaces() {
-    try {
-      const fromImport = (typeof studentData !== 'undefined' && studentData && Array.isArray(studentData.places))
-        ? studentData.places
-        : null;
-      const fromWindow = (window.studentData && Array.isArray(window.studentData.places))
-        ? window.studentData.places
-        : null;
-      const places = fromImport || fromWindow || [];
-      return places.map(p => ({ id: p.id, name: p.name || p.id }));
-    } catch (e) {
-      console.warn('getPlaces error:', e);
-      return [];
-    }
-  } ]
-};
+
 
 
 
@@ -50,7 +32,6 @@ const modeler = new ChoreoModeler({
   // remove the properties' panel if you use the Viewer
   // or NavigatedViewer modules of chor-js
   additionalModules: [
-    PlacesModule, 
     PropertiesPanelModule,
     PropertiesProviderModule,
     TokenAnimationModule
@@ -77,6 +58,21 @@ eventBus.on('selection.changed', function(event) {
     }
   }
 });
+
+const REFRESH_INTERVAL_MS = 2000;
+
+setInterval(() => {
+  const selection = modeler.get('selection');
+  const selected = selection.get();
+
+  if (selected.length > 0) {
+    // Deseleziona e riesegui selezione per forzare refresh del pannello proprietà
+    selection.deselect(selected);
+    selection.select(selected);
+  }
+}, REFRESH_INTERVAL_MS);
+
+
 
 // display the given model (XML representation)
 async function renderModel(newXml) {
@@ -366,6 +362,14 @@ modeler.on('commandStack.changed', () => {
 
 // Renderizza il modellatore BPEnv nella colonna di destra
 bpenvModeler.render('bpenv-container');
+setTimeout(function() {
+  if (typeof window.bpenvModeler?.getPlaces === 'function') {
+    console.log("DEBUG PLACES FROM WINDOW after rendering:", window.bpenvModeler.getPlaces());
+  } else {
+    console.error("bpenvModeler.getPlaces non trovata!");
+  }
+}, 1000);
+
 
 // Carica e visualizza il diagramma BPMN di default all'avvio
 renderModel(xml);

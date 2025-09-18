@@ -53,36 +53,41 @@ export default function MessageDefinition(group, element, bpmnFactory, messageEv
     return [ entry ];
   }
 
-  function createDestinationSelect() {
-    const MODEL_PROP = 'messageDestination';
-    const toOptions = () => {
-      const places = (typeof getPlaces === 'function') ? (getPlaces() || []) : [];
-      return places.map(p => ({
-        value: p.id,
-        name: p.name ? `${p.name} (${p.id})` : p.id
-      }));
-    };
-    const entry = entryFactory.selectBox({
-      id: 'message-destination',
-      label: 'Destination',
-      modelProperty: MODEL_PROP,
-      selectOptions: toOptions(),
-      get: function(el) {
-        const bo = el.businessObject;
-        return { [MODEL_PROP]: (bo && bo.get) ? (bo.get(MODEL_PROP) || '') : '' };
-      },
-      set: function(el, values) {
-        const bo = el.businessObject;
-        return cmdHelper.updateBusinessObject(el, bo, { [MODEL_PROP]: values[MODEL_PROP] || '' });
-      },
-      hidden: function(el) {
-        const bo = el.businessObject;
-        const type = (bo && bo.get) ? (bo.get('messageType') || 'base') : 'base';
-        return type !== 'movement';
-      }
-    });
-    return [ entry ];
-  }
+function createDestinationSelect() {
+  const MODEL_PROP = 'messageDestination';
+  const entry = entryFactory.selectBox({
+    id: 'message-destination',
+    label: 'Destination',
+    modelProperty: MODEL_PROP,
+    selectOptions: () => {
+  const places = (typeof window.bpenvModeler?.getPhysicalPlaces === 'function')
+    ? window.bpenvModeler.getPhysicalPlaces()
+    : [];
+  console.log('PLACES FROM Bpenv:', places);
+  return places.map(p => ({
+    value: p.id,
+    name: p.name ? `${p.name} (${p.id})` : p.id
+  }));
+},
+    get: function(el) {
+      const bo = el.businessObject;
+      return { [MODEL_PROP]: (bo && bo.get) ? (bo.get(MODEL_PROP) || '') : '' };
+    },
+    set: function(el, values) {
+      const bo = el.businessObject;
+      return cmdHelper.updateBusinessObject(el, bo, { [MODEL_PROP]: values[MODEL_PROP] || '' });
+    },
+    hidden: function(el) {
+      const bo = el.businessObject;
+      const type = (bo && bo.get) ? (bo.get('messageType') || 'base') : 'base';
+      return type !== 'movement';
+    }
+  });
+  return [ entry ];
+}
+
+
+
 
   // Se messageEventDefinition è proprio un MessageEventDefinition, aggiungi le voci ItemDefinition
   if (messageEventDefinition && messageEventDefinition.$type === 'bpmn:MessageEventDefinition') {
@@ -110,87 +115,61 @@ export default function MessageDefinition(group, element, bpmnFactory, messageEv
   group.entries = group.entries.concat(createDestinationSelect());
 
   // GUARD FIELD
-group.entries.push(entryFactory.textField({
-  id: "message-guard",
-  label: "Guard condition (if ...)",
-  modelProperty: "guard",
-  get: function(el) {
-    const bo = el.businessObject;
-    return { guard: bo.get ? (bo.get("guard") || "") : "" };
-  },
-  set: function(el, values) {
-    const bo = el.businessObject;
-    return cmdHelper.updateBusinessObject(el, bo, { guard: values.guard || "" });
-  }
-}));
-
-
-// ASSIGNMENTS (multiple row text fields)
-group.entries.push(entryFactory.table({
-  id: 'message-assignments',
-  modelProperties: ['attribute', 'value'],
-  labels: ['Attribute', 'Value'],
-  addLabel: 'Add Assignment',
-
-  getElements: function(element) {
-    const bo = element.businessObject;
-    // Assicurati che 'assignments' sia sempre un array
-    return bo.assignments || [];
-  },
-
-  addElement: function(element, rootElement) {
-    const bo = element.businessObject;
-    const newAssignment = bpmnFactory.create('msg:Assignment', {
-      attribute: 'place.attribute', // Valore di default
-      value: 'newValue'           // Valore di default
-    });
-
-    // FONDAMENTALE: Imposta il parent del nuovo elemento prima di aggiungerlo.
-    // Il businessObject (il messaggio) è il genitore del nuovo assignment.
-    newAssignment.$parent = bo;
-
-    const currentAssignments = bo.get('assignments') || [];
-
-    // Aggiorna il businessObject con la nuova lista di assignments
-    return cmdHelper.updateBusinessObject(element, bo, {
-      assignments: [ ...currentAssignments, newAssignment ]
-    });
-  },
-
-  updateElement: function(element, values, node, idx) {
-    const bo = element.businessObject;
-    const assignment = bo.assignments[idx];
-
-    // Se l'elemento non esiste, non fare nulla (sicurezza)
-    if (!assignment) {
-      console.error('updateElement: assignment non trovato all’indice', idx);
-      return;
+  group.entries.push(entryFactory.textField({
+    id: "message-guard",
+    label: "Guard condition (if ...)",
+    modelProperty: "guard",
+    get: function(el) {
+      const bo = el.businessObject;
+      return { guard: bo.get ? (bo.get("guard") || "") : "" };
+    },
+    set: function(el, values) {
+      const bo = el.businessObject;
+      return cmdHelper.updateBusinessObject(el, bo, { guard: values.guard || "" });
     }
+  }));
 
-    // Aggiorna le proprietà direttamente sull'oggetto 'assignment' esistente.
-    // Il primo argomento di updateBusinessObject è l'elemento del diagramma,
-    // il secondo è l'oggetto del modello da modificare (in questo caso, l'assignment specifico).
-    return cmdHelper.updateBusinessObject(element, assignment, {
-      attribute: values.attribute || undefined,
-      value: values.value || undefined
-    });
-  },
-
-  removeElement: function(element, node, idx) {
-    const bo = element.businessObject;
-    const currentAssignments = bo.get('assignments') || [];
-
-    // Rimuovi l'elemento all'indice specificato
-    currentAssignments.splice(idx, 1);
-
-    // Aggiorna il businessObject con la lista modificata
-    return cmdHelper.updateBusinessObject(element, bo, {
-      assignments: currentAssignments
-    });
-  }
-}));
-
-
-
-
+  // ASSIGNMENTS (multiple row text fields)
+  group.entries.push(entryFactory.table({
+    id: 'message-assignments',
+    modelProperties: ['attribute', 'value'],
+    labels: ['Attribute', 'Value'],
+    addLabel: 'Add Assignment',
+    getElements: function(element) {
+      const bo = element.businessObject;
+      return bo.assignments || [];
+    },
+    addElement: function(element, rootElement) {
+      const bo = element.businessObject;
+      const newAssignment = bpmnFactory.create('msg:Assignment', {
+        attribute: 'place.attribute', // Valore di default
+        value: 'newValue'             // Valore di default
+      });
+      newAssignment.$parent = bo;
+      const currentAssignments = bo.get('assignments') || [];
+      return cmdHelper.updateBusinessObject(element, bo, {
+        assignments: [ ...currentAssignments, newAssignment ]
+      });
+    },
+    updateElement: function(element, values, node, idx) {
+      const bo = element.businessObject;
+      const assignment = bo.assignments[idx];
+      if (!assignment) {
+        console.error('updateElement: assignment non trovato all’indice', idx);
+        return;
+      }
+      return cmdHelper.updateBusinessObject(element, assignment, {
+        attribute: values.attribute || undefined,
+        value: values.value || undefined
+      });
+    },
+    removeElement: function(element, node, idx) {
+      const bo = element.businessObject;
+      const currentAssignments = bo.get('assignments') || [];
+      currentAssignments.splice(idx, 1);
+      return cmdHelper.updateBusinessObject(element, bo, {
+        assignments: currentAssignments
+      });
+    }
+  }));
 }
