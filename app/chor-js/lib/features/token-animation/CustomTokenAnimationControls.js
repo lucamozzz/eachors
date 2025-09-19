@@ -9,86 +9,54 @@ export default function CustomTokenAnimationControls(tokenAnimation, eventBus) {
 }
 
 CustomTokenAnimationControls.prototype._createControls = function () {
-  // Create the controls container
+  // Contenitore dei controlli
   this._controlsContainer = document.createElement("div");
-  this._controlsContainer.className = "token-animation-controls";
-this._controlsContainer.style.cssText = `
-  background: white;
-  border: 1px solid #ccc;
-  border-radius: 5px;
-  padding: 10px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-  font-family: Arial, sans-serif;
-  font-size: 12px;
-  margin-bottom: 10px;
-  display: inline-block;
-`;
+  this._controlsContainer.className = "form-bottom-left"; // stesso stile del form Sequence Flow
+  this._controlsContainer.style.cssText = `
+    bottom: 160px;   /* più in alto rispetto al form Sequence Flow */
+    left: 20px;
+    position: absolute;
+    z-index: 100;
+    font-family: Arial, sans-serif;
+    font-size: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  `;
 
-
-
-  // Create title
-  const title = document.createElement("h4");
-  title.textContent = "Animazione Token";
-  title.style.cssText = "margin: 0 0 10px 0; color: #333;";
+  // Titolo semplice (senza riquadro attorno)
+  const title = document.createElement("label");
+  title.textContent = "Animazione Token:";
+  title.style.cssText = "font-weight: bold; color: #333; margin-bottom: 4px;";
   this._controlsContainer.appendChild(title);
 
-  // Create buttons container
+  // Container pulsanti
   const buttonsContainer = document.createElement("div");
-  buttonsContainer.style.cssText = "margin-bottom: 10px;";
+  buttonsContainer.style.cssText = "display: flex; gap: 6px;";
 
-  // Create Play button
+  // Pulsante Play
   this._playButton = document.createElement("button");
   this._playButton.textContent = "▶ Play";
-  this._playButton.style.cssText = `
-    background: #4CAF50;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    margin-right: 5px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 11px;
-  `;
   buttonsContainer.appendChild(this._playButton);
 
-  // Create Stop button
+  // Pulsante Stop
   this._stopButton = document.createElement("button");
   this._stopButton.textContent = "⏸ Stop";
-  this._stopButton.style.cssText = `
-    background: #f44336;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    margin-right: 5px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 11px;
-  `;
   buttonsContainer.appendChild(this._stopButton);
 
-  // Create Reset button
+  // Pulsante Reset
   this._resetButton = document.createElement("button");
   this._resetButton.textContent = "⟲ Reset";
-  this._resetButton.style.cssText = `
-    background: #2196F3;
-    color: white;
-    border: none;
-    padding: 5px 10px;
-    border-radius: 3px;
-    cursor: pointer;
-    font-size: 11px;
-  `;
   buttonsContainer.appendChild(this._resetButton);
 
   this._controlsContainer.appendChild(buttonsContainer);
 
-  // Create speed control
+  // Slider velocità
   const speedContainer = document.createElement("div");
   speedContainer.style.cssText = "display: flex; align-items: center; gap: 5px;";
 
   const speedLabel = document.createElement("label");
   speedLabel.textContent = "Velocità:";
-  speedLabel.style.cssText = "font-size: 11px; color: #666;";
   speedContainer.appendChild(speedLabel);
 
   this._speedSlider = document.createElement("input");
@@ -97,29 +65,23 @@ this._controlsContainer.style.cssText = `
   this._speedSlider.max = "3";
   this._speedSlider.step = "0.1";
   this._speedSlider.value = "1";
-  this._speedSlider.style.cssText = "flex: 1; margin: 0 5px;";
   speedContainer.appendChild(this._speedSlider);
 
   this._speedValue = document.createElement("span");
   this._speedValue.textContent = "1.0x";
-  this._speedValue.style.cssText = "font-size: 11px; color: #666; min-width: 30px;";
   speedContainer.appendChild(this._speedValue);
 
   this._controlsContainer.appendChild(speedContainer);
 
-// Inserisci prima del primo .form-bottom-left (i form di comando in fondo al canvas)
-const canvasContainer = document.getElementById('canvas');
-const firstForm = canvasContainer.querySelector('.form-bottom-left');
-if (firstForm) {
-  canvasContainer.insertBefore(this._controlsContainer, firstForm);
-} else if (canvasContainer) {
-  canvasContainer.appendChild(this._controlsContainer);
-} else {
-  document.body.appendChild(this._controlsContainer);
-}
-
-
+  // Inserisci nel canvas
+  const canvasContainer = document.getElementById("canvas");
+  if (canvasContainer) {
+    canvasContainer.appendChild(this._controlsContainer);
+  } else {
+    document.body.appendChild(this._controlsContainer);
+  }
 };
+
 
 CustomTokenAnimationControls.prototype._bindEvents = function () {
   // Play button
