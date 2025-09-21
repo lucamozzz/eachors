@@ -36,20 +36,29 @@ CustomTokenAnimation.prototype._bindEvents = function () {
 };
 
 CustomTokenAnimation.prototype.start = function () {
-  this.reset(); // Reset any previous animation
-  this._isPlaying = true;
-  this._currentWaypointIndex = 0;
-
-  const startEvent = this._elementRegistry.getAll().find(element => is(element, "bpmn:StartEvent"));
-
-  if (startEvent && startEvent.outgoing && startEvent.outgoing.length > 0) {
-    this._currentSequenceFlow = startEvent.outgoing[0];
-    this._animateTokenAlongFlow(this._currentSequenceFlow);
-  } else {
-    console.warn("No start event or outgoing sequence flow found to start animation.");
-    this._isPlaying = false;
+  if (this._isPlaying) {
+    // Se già in play, non fare nulla
+    return;
   }
+
+  this._isPlaying = true;
+
+  // Se non esiste un flow corrente (prima animazione o dopo reset), lo inizializziamo
+  if (!this._currentSequenceFlow) {
+    const startEvent = this._elementRegistry.getAll().find(element => is(element, "bpmn:StartEvent"));
+    if (startEvent && startEvent.outgoing && startEvent.outgoing.length > 0) {
+      this._currentSequenceFlow = startEvent.outgoing[0];
+      this._currentWaypointIndex = 0;
+    } else {
+      console.warn("No start event or outgoing sequence flow found to start animation.");
+      this._isPlaying = false;
+      return;
+    }
+  }
+
+  this._animateTokenAlongFlow(this._currentSequenceFlow, this._currentWaypointIndex);
 };
+
 
 CustomTokenAnimation.prototype.pause = function () {
   this._isPlaying = false;
@@ -65,10 +74,19 @@ CustomTokenAnimation.prototype.reset = function () {
     svgRemove(this._animationToken);
     this._animationToken = null;
   }
+  
+  // Rimuove marker 'highlight' da tutti gli elementi colorati
+  // Per precisione, cerca tutti gli elementi con marker e li ripulisce
+  const allElements = this._elementRegistry.getAll();
+  allElements.forEach(element => {
+    this._canvas.removeMarker(element.id, 'highlight');
+  });
+
   this._currentWaypointIndex = 0;
   this._currentSequenceFlow = null;
   this._isPlaying = false;
 };
+
 
 CustomTokenAnimation.prototype.setSpeed = function (speed) {
   this._speed = speed;
@@ -221,11 +239,12 @@ CustomTokenAnimation.prototype._handleChoreographyTask = function (task) {
 
 
 
- // vecchia funzione di colorazione, ora non usata
- /*CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
+CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
   this._canvas.removeMarker(elementId, 'highlight'); // rimuove marker precedente
   this._canvas.addMarker(elementId, 'highlight');    // aggiunge nuovo marker con classe CSS
-};
+}; 
+
+/* VECCHIA VERSIONE:
 
 CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
   const element = this._elementRegistry.get(elementId);
@@ -269,7 +288,9 @@ CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
     position: { top: -10, left: -10 },
     html: `<div style="border: 3px solid ${color}; background: rgba(255,0,0,0.3); width: 40px; height: 25px; box-sizing: border-box; pointer-events: none; border-radius: 4px;"></div>`
   });
-}; **/
+};
+*/
+
 
 CustomTokenAnimation.prototype.animateEdge = function(edgeId) {
   this.reset(); // Ferma eventuali animazioni precedenti
