@@ -1,0 +1,6 @@
+/* custom-token-animation.css */
+.highlight rect {
+  stroke: yellow !important;
+  fill: rgba(255, 255, 0, 0.3) !important;
+  transition: fill 0.3s ease, stroke 0.3s ease;
+}

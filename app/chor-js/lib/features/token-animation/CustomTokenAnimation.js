@@ -6,6 +6,8 @@ import {
   remove as svgRemove,
 } from "tiny-svg";
 import { is } from "bpmn-js/lib/util/ModelUtil";
+import './CustomTokenAnimation.css';
+
 
 const TOKEN_SIZE = 20;
 const ANIMATION_DURATION_BASE = 2000; // 2 secondi base
@@ -124,110 +126,150 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, 
     const progress = (currentTime - startTime) / duration;
 
     if (progress < 1) {
-      const totalSegments = waypoints.length - 1;
-      const segmentProgress = progress * totalSegments;
-      const currentSegment = Math.floor(segmentProgress);
-      const segmentRatio = segmentProgress - currentSegment;
-
-      const startPoint = waypoints[currentSegment];
-      const endPoint = waypoints[currentSegment + 1];
-
-      const x = startPoint.x + (endPoint.x - startPoint.x) * segmentRatio;
-      const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
-
-      svgAttr(
-        this._animationToken,
-        "transform",
-        `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
-      );
-
+      this._updateTokenPosition(progress, waypoints);
       this._animationFrameId = requestAnimationFrame(animate);
     } else {
-      const nextElement = sequenceFlow.target;
-      console.log("Next element:", nextElement);
-
-     if (
-  nextElement &&
-  is(nextElement, "bpmn:ChoreographyTask") &&
-  nextElement.businessObject &&
-  nextElement.businessObject.messageFlowRef &&
-  Array.isArray(nextElement.businessObject.messageFlowRef) &&
-  nextElement.businessObject.messageFlowRef.length > 0
-) {
-  // prendo tutti i messageFlowRef
-  const messageFlows = nextElement.businessObject.messageFlowRef;
-
-  messageFlows.forEach(flow => {
-    const messageElement = flow.messageRef;
-    if (messageElement && messageElement.id) {
-      this.colorElement(messageElement.id, "yellow");
-    }
-  });
-
-  // aspetto 1 secondo e poi continuo sull'outgoing
-  setTimeout(() => {
-    if (nextElement.outgoing && nextElement.outgoing.length > 0) {
-      const nextSequenceFlow = nextElement.outgoing[0];
-      this._animateTokenAlongFlow(nextSequenceFlow, 0);
-    } else {
-      this.reset();
-    }
-  }, 1000);
-}
- else {
-        if (nextElement && nextElement.outgoing && nextElement.outgoing.length > 0) {
-          const nextSequenceFlow = nextElement.outgoing[0];
-          this._animateTokenAlongFlow(nextSequenceFlow, 0);
-        } else {
-          this.reset();
-        }
-      }
+      this._handleNextElement(sequenceFlow.target);
     }
   };
 
   this._animationFrameId = requestAnimationFrame(animate);
 };
 
+/**
+ * Aggiorna la posizione del token lungo i waypoints
+ */
+CustomTokenAnimation.prototype._updateTokenPosition = function (progress, waypoints) {
+  const totalSegments = waypoints.length - 1;
+  const segmentProgress = progress * totalSegments;
+  const currentSegment = Math.floor(segmentProgress);
+  const segmentRatio = segmentProgress - currentSegment;
+
+  const startPoint = waypoints[currentSegment];
+  const endPoint = waypoints[currentSegment + 1];
+
+  const x = startPoint.x + (endPoint.x - startPoint.x) * segmentRatio;
+  const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
+
+  svgAttr(
+    this._animationToken,
+    "transform",
+    `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
+  );
+};
+
+/**
+ * Decide cosa fare quando il token raggiunge un nuovo elemento
+ */
+CustomTokenAnimation.prototype._handleNextElement = function (nextElement) {
+  console.log("Next element:", nextElement);
+
+  if (this._isChoreographyWithMessages(nextElement)) {
+    this._handleChoreographyTask(nextElement);
+  } else if (nextElement && nextElement.outgoing && nextElement.outgoing.length > 0) {
+    this._animateTokenAlongFlow(nextElement.outgoing[0], 0);
+  } else {
+    this.reset();
+  }
+};
+
+/**
+ * Controlla se l’elemento è un ChoreographyTask con messaggi
+ */
+CustomTokenAnimation.prototype._isChoreographyWithMessages = function (element) {
+  return (
+    element &&
+    is(element, "bpmn:ChoreographyTask") &&
+    element.businessObject &&
+    Array.isArray(element.businessObject.messageFlowRef) &&
+    element.businessObject.messageFlowRef.length > 0
+  );
+};
+
+/**
+ * Gestisce la colorazione e la logica dei messaggi di un ChoreographyTask
+ */
+CustomTokenAnimation.prototype._handleChoreographyTask = function (task) {
+  const messageFlows = task.businessObject.messageFlowRef;
+
+  messageFlows.forEach(flow => {
+    const messageElement = flow.messageRef;
+    if (messageElement && messageElement.id) {
+      // 🔑 Recupero il *shape* dal registry invece che usare solo messageRef
+      const messageShape = this._elementRegistry.getAll().find(el => 
+        el.businessObject === messageElement
+      );
+
+      if (messageShape) {
+        this.colorElement(messageShape.id, "yellow");
+      } else {
+        console.warn("Shape non trovato per messageRef", messageElement.id);
+      }
+    }
+  });
+
+  setTimeout(() => {
+    if (task.outgoing && task.outgoing.length > 0) {
+      this._animateTokenAlongFlow(task.outgoing[0], 0);
+    } else {
+      this.reset();
+    }
+  }, 1000);
+};
 
 
+
+
+
+ // vecchia funzione di colorazione, ora non usata
+ /*CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
+  this._canvas.removeMarker(elementId, 'highlight'); // rimuove marker precedente
+  this._canvas.addMarker(elementId, 'highlight');    // aggiunge nuovo marker con classe CSS
+};
 
 CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
-  // Prova a colorare direttamente il simbolo SVG
-  const element = this._elementRegistry.get(elementId);
-  if (!element) return;
+  const element = this._elementRegistry.get(elementId);
+  if (!element) return;
 
-  const gfx = this._elementRegistry.getGraphics(element);
-    if (gfx) {
-    // Usa il colore scelto per il bordo, ma trasparente per il riempimento
-    let fillColor = color;
-    // Se il colore è in formato esadecimale, converti in rgba con trasparenza
-    if (/^#([A-Fa-f0-9]{6})$/.test(color)) {
-      const r = parseInt(color.substr(1,2),16);
-      const g = parseInt(color.substr(3,2),16);
-      const b = parseInt(color.substr(5,2),16);
-      fillColor = `rgba(${r},${g},${b},0.3)`;
-    }
-    gfx.querySelectorAll('rect, path, polygon, ellipse, circle').forEach(node => {
-      node.setAttribute('stroke', color); // bordo opaco
-      node.setAttribute('fill', fillColor);   // interno trasparente
-      node.style.stroke = color;
-      node.style.fill = fillColor;
-    });
-    return;
-  }
 
- // Fallback overlay 
-  const overlays = this._overlays;
-  if (!overlays) {
-    console.warn("Overlays non disponibili per colorare l’elemento");
-    return;
-  }
-  overlays.remove({ element: elementId, type: 'highlight' });
-  overlays.add(elementId, 'highlight', {
-    position: { top: -10, left: -10 },
-    html: `<div style="border: 3px solid ${color}; background: rgba(255,0,0,0.3); width: 40px; height: 25px; box-sizing: border-box; pointer-events: none; border-radius: 4px;"></div>`
-  });
-};
+  const gfx = this._elementRegistry.getGraphics(element);
+  if (gfx) {
+    let fillColor = color;
+    if (/^#([A-Fa-f0-9]{6})$/.test(color)) {
+      const r = parseInt(color.substr(1, 2), 16);
+      const g = parseInt(color.substr(3, 2), 16);
+      const b = parseInt(color.substr(5, 2), 16);
+      fillColor = `rgba(${r},${g},${b},0.3)`;
+    }
+
+
+    // ✅ colora solo i rettangoli principali
+    gfx.querySelectorAll('rect').forEach(node => {
+      node.setAttribute('stroke', color);
+      node.setAttribute('fill', fillColor);
+      node.style.stroke = color;
+      node.style.fill = fillColor;
+    });
+
+
+    return;
+  }
+
+
+  // fallback overlay
+  const overlays = this._overlays;
+  if (!overlays) {
+    console.warn("Overlays non disponibili per colorare l’elemento");
+    return;
+  }
+
+
+  overlays.remove({ element: elementId, type: 'highlight' });
+  overlays.add(elementId, 'highlight', {
+    position: { top: -10, left: -10 },
+    html: `<div style="border: 3px solid ${color}; background: rgba(255,0,0,0.3); width: 40px; height: 25px; box-sizing: border-box; pointer-events: none; border-radius: 4px;"></div>`
+  });
+}; **/
 
 CustomTokenAnimation.prototype.animateEdge = function(edgeId) {
   this.reset(); // Ferma eventuali animazioni precedenti
