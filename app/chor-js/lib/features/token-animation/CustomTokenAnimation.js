@@ -143,19 +143,53 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, 
 
       this._animationFrameId = requestAnimationFrame(animate);
     } else {
-      // Move to the next sequence flow or end animation
       const nextElement = sequenceFlow.target;
-      if (nextElement && nextElement.outgoing && nextElement.outgoing.length > 0) {
-        const nextSequenceFlow = nextElement.outgoing[0]; // Assuming one outgoing flow for simplicity
-        this._animateTokenAlongFlow(nextSequenceFlow);
-      } else {
-        this.reset();
+      console.log("Next element:", nextElement);
+
+     if (
+  nextElement &&
+  is(nextElement, "bpmn:ChoreographyTask") &&
+  nextElement.businessObject &&
+  nextElement.businessObject.messageFlowRef &&
+  Array.isArray(nextElement.businessObject.messageFlowRef) &&
+  nextElement.businessObject.messageFlowRef.length > 0
+) {
+  // prendo tutti i messageFlowRef
+  const messageFlows = nextElement.businessObject.messageFlowRef;
+
+  messageFlows.forEach(flow => {
+    const messageElement = flow.messageRef;
+    if (messageElement && messageElement.id) {
+      this.colorElement(messageElement.id, "yellow");
+    }
+  });
+
+  // aspetto 1 secondo e poi continuo sull'outgoing
+  setTimeout(() => {
+    if (nextElement.outgoing && nextElement.outgoing.length > 0) {
+      const nextSequenceFlow = nextElement.outgoing[0];
+      this._animateTokenAlongFlow(nextSequenceFlow, 0);
+    } else {
+      this.reset();
+    }
+  }, 1000);
+}
+ else {
+        if (nextElement && nextElement.outgoing && nextElement.outgoing.length > 0) {
+          const nextSequenceFlow = nextElement.outgoing[0];
+          this._animateTokenAlongFlow(nextSequenceFlow, 0);
+        } else {
+          this.reset();
+        }
       }
     }
   };
 
   this._animationFrameId = requestAnimationFrame(animate);
 };
+
+
+
 
 CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
   // Prova a colorare direttamente il simbolo SVG
