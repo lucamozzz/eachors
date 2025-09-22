@@ -28,6 +28,7 @@ export default function CustomTokenAnimation(
   // mappe per tracciare animazioni/token e stato dei parallel gateway (join)
   this._tokenAnimations = new Map(); // Map<tokenElement, frameId>
   this._gatewayJoinState = new Map(); // Map<gatewayId, countArrived>
+  this._tokenStates = new Map(); // Map<token, { sequenceFlow, segmentIndex, ratio }>
 
   this._bindEvents();
 }
@@ -37,13 +38,23 @@ CustomTokenAnimation.prototype._bindEvents = function () {
 };
 
 CustomTokenAnimation.prototype.start = function () {
-  if (this._isPlaying) {
+  if (this._isPlaying) return;
+  this._isPlaying = true;
+
+  // 🔑 Resume se ci sono token salvati
+  if (this._tokenStates.size > 0) {
+    for (const [token, state] of this._tokenStates.entries()) {
+      this._animateTokenAlongFlow(
+        state.sequenceFlow,
+        state.segmentIndex,
+        token,
+        state.ratio
+      );
+    }
     return;
   }
 
-  this._isPlaying = true;
-
-  // trova start event e lancia il token iniziale
+  // Altrimenti, avvio da StartEvent
   const startEventShape = this._elementRegistry.getAll().find(element => is(element, "bpmn:StartEvent"));
   if (!startEventShape || !startEventShape.outgoing || startEventShape.outgoing.length === 0) {
     console.warn("No start event or outgoing sequence flow found to start animation.");
@@ -56,6 +67,7 @@ CustomTokenAnimation.prototype.start = function () {
   this._animateTokenAlongFlow(firstFlow, 0, token);
 };
 
+
 CustomTokenAnimation.prototype.pause = function () {
   // ferma tutto: cancella tutti i frame in corso ma non rimuove i token dall'SVG (così si può riprendere eventualmente)
   this._isPlaying = false;
@@ -67,17 +79,21 @@ CustomTokenAnimation.prototype.pause = function () {
 };
 
 CustomTokenAnimation.prototype.reset = function () {
+  // stoppa le animazioni in corso
   this.pause();
 
   // rimuovi tutti i token SVG presenti nel layer
   const group = this._getAnimationLayer();
   if (group) {
+    // rimuove tutti i figli (token)
     while (group.firstChild) {
       svgRemove(group.firstChild);
     }
   }
 
+  // pulisci tutte le mappe di stato
   this._tokenAnimations.clear();
+  if (this._tokenStates) this._tokenStates.clear();
   this._gatewayJoinState.clear();
 
   // rimuovi markers highlight
@@ -88,6 +104,7 @@ CustomTokenAnimation.prototype.reset = function () {
 
   this._isPlaying = false;
 };
+
 
 
 CustomTokenAnimation.prototype.setSpeed = function (speed) {
@@ -136,35 +153,33 @@ CustomTokenAnimation.prototype._removeToken = function (token) {
  * - startWaypointIndex: opzionale
  * - token: elemento SVG del token. Se non passato, ne viene creato uno.
  */
-CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, startWaypointIndex = 0, token = null) {
-  if (!this._isPlaying) {
-    // Se siamo in pausa non iniziamo
-    return;
-  }
+CustomTokenAnimation.prototype._animateTokenAlongFlow = function (
+  sequenceFlow,
+  startWaypointIndex = 0,
+  token = null,
+  startRatio = 0
+) {
+  if (!this._isPlaying) return;
 
   if (!sequenceFlow || !sequenceFlow.waypoints || sequenceFlow.waypoints.length < 2) {
-    // niente da fare: rimuovi token se esiste
     if (token) this._removeToken(token);
     return;
   }
 
   const waypoints = sequenceFlow.waypoints;
-
-  if (!token) {
-    token = this._createTokenGfx();
-  }
+  if (!token) token = this._createTokenGfx();
 
   const duration = ANIMATION_DURATION_BASE / this._speed;
   let startTime = null;
 
   const animate = (currentTime) => {
-    if (!this._isPlaying) return; // fermati se in pausa
+    if (!this._isPlaying) return;
 
     if (!startTime) startTime = currentTime;
-    const progress = (currentTime - startTime) / duration;
+    const elapsed = (currentTime - startTime) / duration;
+    const progress = startRatio + elapsed; // riparti dal punto giusto
 
     if (progress < 1) {
-      // calcola posizione e sposta token
       const totalSegments = waypoints.length - 1;
       const segmentProgress = progress * totalSegments;
       const currentSegment = Math.floor(segmentProgress);
@@ -176,18 +191,24 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, 
       const x = startPoint.x + (endPoint.x - startPoint.x) * segmentRatio;
       const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
 
-      
       svgAttr(
         token,
         "transform",
         `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
       );
 
+      // 🔑 salva lo stato del token
+      this._tokenStates.set(token, {
+        sequenceFlow,
+        segmentIndex: currentSegment,
+        ratio: segmentRatio
+      });
+
       const frameId = requestAnimationFrame(animate);
       this._tokenAnimations.set(token, frameId);
     } else {
-      // fine animazione su questo edge: togliamo tracciamento e avanziamo
       this._tokenAnimations.delete(token);
+      this._tokenStates.delete(token);
       this._handleNextElement(sequenceFlow.target, token);
     }
   };
@@ -195,6 +216,7 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, 
   const initialFrameId = requestAnimationFrame(animate);
   this._tokenAnimations.set(token, initialFrameId);
 };
+
 
 /**
  * Decide cosa fare quando il token raggiunge un nuovo elemento
