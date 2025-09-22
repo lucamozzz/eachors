@@ -21,12 +21,13 @@ export default function CustomTokenAnimation(
   this._eventBus = eventBus;
   this._elementRegistry = elementRegistry;
 
-  this._animationToken = null;
+  // variabili di stato
   this._isPlaying = false;
   this._speed = 1;
-  this._currentWaypointIndex = 0;
-  this._currentSequenceFlow = null;
-  this._animationFrameId = null;
+
+  // mappe per tracciare animazioni/token e stato dei parallel gateway (join)
+  this._tokenAnimations = new Map(); // Map<tokenElement, frameId>
+  this._gatewayJoinState = new Map(); // Map<gatewayId, countArrived>
 
   this._bindEvents();
 }
@@ -37,64 +38,61 @@ CustomTokenAnimation.prototype._bindEvents = function () {
 
 CustomTokenAnimation.prototype.start = function () {
   if (this._isPlaying) {
-    // Se già in play, non fare nulla
     return;
   }
 
   this._isPlaying = true;
 
-  // Se non esiste un flow corrente (prima animazione o dopo reset), lo inizializziamo
-  if (!this._currentSequenceFlow) {
-    const startEvent = this._elementRegistry.getAll().find(element => is(element, "bpmn:StartEvent"));
-    if (startEvent && startEvent.outgoing && startEvent.outgoing.length > 0) {
-      this._currentSequenceFlow = startEvent.outgoing[0];
-      this._currentWaypointIndex = 0;
-    } else {
-      console.warn("No start event or outgoing sequence flow found to start animation.");
-      this._isPlaying = false;
-      return;
-    }
+  // trova start event e lancia il token iniziale
+  const startEventShape = this._elementRegistry.getAll().find(element => is(element, "bpmn:StartEvent"));
+  if (!startEventShape || !startEventShape.outgoing || startEventShape.outgoing.length === 0) {
+    console.warn("No start event or outgoing sequence flow found to start animation.");
+    this._isPlaying = false;
+    return;
   }
 
-  this._animateTokenAlongFlow(this._currentSequenceFlow, this._currentWaypointIndex);
+  const firstFlow = startEventShape.outgoing[0];
+  const token = this._createTokenGfx();
+  this._animateTokenAlongFlow(firstFlow, 0, token);
 };
 
-
 CustomTokenAnimation.prototype.pause = function () {
+  // ferma tutto: cancella tutti i frame in corso ma non rimuove i token dall'SVG (così si può riprendere eventualmente)
   this._isPlaying = false;
-  if (this._animationFrameId) {
-    cancelAnimationFrame(this._animationFrameId);
-    this._animationFrameId = null;
+  for (const frameId of this._tokenAnimations.values()) {
+    cancelAnimationFrame(frameId);
   }
+  // non cancelliamo le entry dalla mappa qui, perché potremmo voler riprendere (ma nella nostra implementazione semplice riprenderà dall'inizio quando start viene chiamato).
+  this._tokenAnimations.clear();
 };
 
 CustomTokenAnimation.prototype.reset = function () {
   this.pause();
-  if (this._animationToken) {
-    svgRemove(this._animationToken);
-    this._animationToken = null;
+
+  // rimuovi tutti i token SVG presenti nel layer
+  const group = this._getAnimationLayer();
+  if (group) {
+    while (group.firstChild) {
+      svgRemove(group.firstChild);
+    }
   }
-  
-  // Rimuove marker 'highlight' da tutti gli elementi colorati
-  // Per precisione, cerca tutti gli elementi con marker e li ripulisce
+
+  this._tokenAnimations.clear();
+  this._gatewayJoinState.clear();
+
+  // rimuovi markers highlight
   const allElements = this._elementRegistry.getAll();
   allElements.forEach(element => {
     this._canvas.removeMarker(element.id, 'highlight');
   });
 
-  this._currentWaypointIndex = 0;
-  this._currentSequenceFlow = null;
   this._isPlaying = false;
 };
 
 
 CustomTokenAnimation.prototype.setSpeed = function (speed) {
   this._speed = speed;
-  // If animation is running, restart it with new speed
-  if (this._isPlaying && this._currentSequenceFlow) {
-    this.pause();
-    this._animateTokenAlongFlow(this._currentSequenceFlow, this._currentWaypointIndex);
-  }
+  // Nota: per semplicità i token già in volo non ricalcolano il tempo rimanente.
 };
 
 CustomTokenAnimation.prototype._createTokenGfx = function () {
@@ -117,78 +115,189 @@ CustomTokenAnimation.prototype._getAnimationLayer = function () {
   return group;
 };
 
-CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, startWaypointIndex = 0) {
-  if (!this._isPlaying) return;
+/* rimuove un singolo token (cancella anche il frameRequest associato) */
+CustomTokenAnimation.prototype._removeToken = function (token) {
+  if (!token) return;
+  const frameId = this._tokenAnimations.get(token);
+  if (frameId) {
+    cancelAnimationFrame(frameId);
+  }
+  this._tokenAnimations.delete(token);
+  try {
+    svgRemove(token);
+  } catch (e) {
+    // ignore se già rimosso
+  }
+};
 
-  const waypoints = sequenceFlow.waypoints;
-  if (!waypoints || waypoints.length < 2) {
-    console.warn("Sequence flow has no valid waypoints for animation.", sequenceFlow);
-    this.reset();
+/**
+ * Anima UN token lungo un sequenceFlow.
+ * - sequenceFlow: l'edge con waypoints
+ * - startWaypointIndex: opzionale
+ * - token: elemento SVG del token. Se non passato, ne viene creato uno.
+ */
+CustomTokenAnimation.prototype._animateTokenAlongFlow = function (sequenceFlow, startWaypointIndex = 0, token = null) {
+  if (!this._isPlaying) {
+    // Se siamo in pausa non iniziamo
     return;
   }
 
-  if (!this._animationToken) {
-    this._animationToken = this._createTokenGfx();
+  if (!sequenceFlow || !sequenceFlow.waypoints || sequenceFlow.waypoints.length < 2) {
+    // niente da fare: rimuovi token se esiste
+    if (token) this._removeToken(token);
+    return;
   }
 
-  this._currentSequenceFlow = sequenceFlow;
-  this._currentWaypointIndex = startWaypointIndex;
+  const waypoints = sequenceFlow.waypoints;
 
-  let startTime = null;
+  if (!token) {
+    token = this._createTokenGfx();
+  }
+
   const duration = ANIMATION_DURATION_BASE / this._speed;
+  let startTime = null;
 
   const animate = (currentTime) => {
-    if (!this._isPlaying) return;
+    if (!this._isPlaying) return; // fermati se in pausa
 
     if (!startTime) startTime = currentTime;
     const progress = (currentTime - startTime) / duration;
 
     if (progress < 1) {
-      this._updateTokenPosition(progress, waypoints);
-      this._animationFrameId = requestAnimationFrame(animate);
+      // calcola posizione e sposta token
+      const totalSegments = waypoints.length - 1;
+      const segmentProgress = progress * totalSegments;
+      const currentSegment = Math.floor(segmentProgress);
+      const segmentRatio = segmentProgress - currentSegment;
+
+      const startPoint = waypoints[currentSegment];
+      const endPoint = waypoints[currentSegment + 1];
+
+      const x = startPoint.x + (endPoint.x - startPoint.x) * segmentRatio;
+      const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
+
+      
+      svgAttr(
+        token,
+        "transform",
+        `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
+      );
+
+      const frameId = requestAnimationFrame(animate);
+      this._tokenAnimations.set(token, frameId);
     } else {
-      this._handleNextElement(sequenceFlow.target);
+      // fine animazione su questo edge: togliamo tracciamento e avanziamo
+      this._tokenAnimations.delete(token);
+      this._handleNextElement(sequenceFlow.target, token);
     }
   };
 
-  this._animationFrameId = requestAnimationFrame(animate);
-};
-
-/**
- * Aggiorna la posizione del token lungo i waypoints
- */
-CustomTokenAnimation.prototype._updateTokenPosition = function (progress, waypoints) {
-  const totalSegments = waypoints.length - 1;
-  const segmentProgress = progress * totalSegments;
-  const currentSegment = Math.floor(segmentProgress);
-  const segmentRatio = segmentProgress - currentSegment;
-
-  const startPoint = waypoints[currentSegment];
-  const endPoint = waypoints[currentSegment + 1];
-
-  const x = startPoint.x + (endPoint.x - startPoint.x) * segmentRatio;
-  const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
-
-  svgAttr(
-    this._animationToken,
-    "transform",
-    `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
-  );
+  const initialFrameId = requestAnimationFrame(animate);
+  this._tokenAnimations.set(token, initialFrameId);
 };
 
 /**
  * Decide cosa fare quando il token raggiunge un nuovo elemento
+ * - nextElement: shape/bpmn element
+ * - token: il token SVG che è arrivato
  */
-CustomTokenAnimation.prototype._handleNextElement = function (nextElement) {
-  console.log("Next element:", nextElement);
+CustomTokenAnimation.prototype._handleNextElement = function (nextElement, token) {
+  if (!token) return;
 
-  if (this._isChoreographyWithMessages(nextElement)) {
-    this._handleChoreographyTask(nextElement);
-  } else if (nextElement && nextElement.outgoing && nextElement.outgoing.length > 0) {
-    this._animateTokenAlongFlow(nextElement.outgoing[0], 0);
-  } else {
-    this.reset();
+  // se non c'è elemento successivo → token finito
+  if (!nextElement) {
+    this._removeToken(token);
+    return;
   }
+
+  // se è EndEvent → elimina token
+  if (is(nextElement, "bpmn:EndEvent")) {
+    this._removeToken(token);
+    return;
+  }
+
+  // Se è ParallelGateway -> gestiamo join/split
+  if (is(nextElement, "bpmn:ParallelGateway")) {
+    const incomingCount = nextElement.incoming ? nextElement.incoming.length : 0;
+    const outgoingCount = nextElement.outgoing ? nextElement.outgoing.length : 0;
+
+    // JOIN (gateway con più incoming e tipicamente 1 outgoing)
+    if (incomingCount > 1 && outgoingCount >= 1) {
+      const current = this._gatewayJoinState.get(nextElement.id) || 0;
+      const newCount = current + 1;
+      this._gatewayJoinState.set(nextElement.id, newCount);
+
+      // consumiamo/eliminiamo questo token
+      this._removeToken(token);
+
+      if (newCount === incomingCount) {
+        // tutti i token sono arrivati -> reset counter e uscita con 1 token
+        this._gatewayJoinState.set(nextElement.id, 0);
+
+        // crea un nuovo token che esce dal gateway
+        const outFlow = nextElement.outgoing[0];
+        if (outFlow) {
+          const newToken = this._createTokenGfx();
+          this._animateTokenAlongFlow(outFlow, 0, newToken);
+        }
+      }
+      return;
+    }
+
+    // SPLIT (un incoming -> più outgoing)
+    if (outgoingCount > 1) {
+      nextElement.outgoing.forEach((outFlow, idx) => {
+        if (idx === 0) {
+          this._animateTokenAlongFlow(outFlow, 0, token);
+        } else {
+          const newToken = this._createTokenGfx();
+          this._animateTokenAlongFlow(outFlow, 0, newToken);
+        }
+      });
+      return;
+    }
+  }
+
+  if (is(nextElement, "bpmn:ExclusiveGateway")) {
+  if (nextElement.outgoing && nextElement.outgoing.length > 0) {
+    const randomIndex = Math.floor(Math.random() * nextElement.outgoing.length);
+    const chosenFlow = nextElement.outgoing[randomIndex];
+    this._animateTokenAlongFlow(chosenFlow, 0, token);
+  } else {
+    this._removeToken(token);
+  }
+  return;
+}
+
+  // Choreography: colora i messageRef ma NON bloccare il token
+  if (this._isChoreographyWithMessages(nextElement)) {
+    this._handleChoreographyTask(nextElement, token);
+    return;
+  }
+
+  // Normale: prosegui sugli outgoing (gestione split anche qui)
+  if (nextElement.outgoing && nextElement.outgoing.length > 0) {
+    if (nextElement.outgoing.length > 1) {
+      nextElement.outgoing.forEach((outFlow, idx) => {
+        if (idx === 0) {
+          this._animateTokenAlongFlow(outFlow, 0, token);
+        } else {
+          const newToken = this._createTokenGfx();
+          this._animateTokenAlongFlow(outFlow, 0, newToken);
+        }
+      });
+    } else {
+      this._animateTokenAlongFlow(nextElement.outgoing[0], 0, token);
+    }
+  } else {
+    // nessun outgoing -> rimuovi token
+    this._removeToken(token);
+  }
+};
+
+CustomTokenAnimation.prototype._animateTokenAlongFlowWithToken = function (sequenceFlow, startWaypointIndex = 0, token) {
+  // mantenuta per compatibilità: delega alla versione unica
+  return this._animateTokenAlongFlow(sequenceFlow, startWaypointIndex, token);
 };
 
 /**
@@ -206,15 +315,15 @@ CustomTokenAnimation.prototype._isChoreographyWithMessages = function (element) 
 
 /**
  * Gestisce la colorazione e la logica dei messaggi di un ChoreographyTask
+ * Nota: NON lascia il token fermo, lo fa proseguire subito (split se più outgoing).
  */
-CustomTokenAnimation.prototype._handleChoreographyTask = function (task) {
-  const messageFlows = task.businessObject.messageFlowRef;
+CustomTokenAnimation.prototype._handleChoreographyTask = function (task, token) {
+  const messageFlows = task.businessObject.messageFlowRef || [];
 
   messageFlows.forEach(flow => {
     const messageElement = flow.messageRef;
     if (messageElement && messageElement.id) {
-      // 🔑 Recupero il *shape* dal registry invece che usare solo messageRef
-      const messageShape = this._elementRegistry.getAll().find(el => 
+      const messageShape = this._elementRegistry.getAll().find(el =>
         el.businessObject === messageElement
       );
 
@@ -226,74 +335,33 @@ CustomTokenAnimation.prototype._handleChoreographyTask = function (task) {
     }
   });
 
-  setTimeout(() => {
-    if (task.outgoing && task.outgoing.length > 0) {
-      this._animateTokenAlongFlow(task.outgoing[0], 0);
+  // subito avanti (non lasciare il token fermo)
+  if (task.outgoing && task.outgoing.length > 0) {
+    if (task.outgoing.length > 1) {
+      task.outgoing.forEach((outFlow, idx) => {
+        if (idx === 0) {
+          this._animateTokenAlongFlow(outFlow, 0, token);
+        } else {
+          const newToken = this._createTokenGfx();
+          this._animateTokenAlongFlow(outFlow, 0, newToken);
+        }
+      });
     } else {
-      this.reset();
+      this._animateTokenAlongFlow(task.outgoing[0], 0, token);
     }
-  }, 1000);
+  } else {
+    this._removeToken(token);
+  }
 };
-
-
-
-
 
 CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
   this._canvas.removeMarker(elementId, 'highlight'); // rimuove marker precedente
   this._canvas.addMarker(elementId, 'highlight');    // aggiunge nuovo marker con classe CSS
-}; 
-
-/* VECCHIA VERSIONE:
-
-CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
-  const element = this._elementRegistry.get(elementId);
-  if (!element) return;
-
-
-  const gfx = this._elementRegistry.getGraphics(element);
-  if (gfx) {
-    let fillColor = color;
-    if (/^#([A-Fa-f0-9]{6})$/.test(color)) {
-      const r = parseInt(color.substr(1, 2), 16);
-      const g = parseInt(color.substr(3, 2), 16);
-      const b = parseInt(color.substr(5, 2), 16);
-      fillColor = `rgba(${r},${g},${b},0.3)`;
-    }
-
-
-    // ✅ colora solo i rettangoli principali
-    gfx.querySelectorAll('rect').forEach(node => {
-      node.setAttribute('stroke', color);
-      node.setAttribute('fill', fillColor);
-      node.style.stroke = color;
-      node.style.fill = fillColor;
-    });
-
-
-    return;
-  }
-
-
-  // fallback overlay
-  const overlays = this._overlays;
-  if (!overlays) {
-    console.warn("Overlays non disponibili per colorare l’elemento");
-    return;
-  }
-
-
-  overlays.remove({ element: elementId, type: 'highlight' });
-  overlays.add(elementId, 'highlight', {
-    position: { top: -10, left: -10 },
-    html: `<div style="border: 3px solid ${color}; background: rgba(255,0,0,0.3); width: 40px; height: 25px; box-sizing: border-box; pointer-events: none; border-radius: 4px;"></div>`
-  });
 };
-*/
-
 
 CustomTokenAnimation.prototype.animateEdge = function(edgeId) {
-  this.reset(); // Ferma eventuali animazioni precedenti
+  // ferma eventuali animazioni precedenti e lancia animazione su un solo edge
+  this.reset();
 
   const edge = this._elementRegistry.get(edgeId);
   if (!edge || !edge.waypoints) {
@@ -302,52 +370,8 @@ CustomTokenAnimation.prototype.animateEdge = function(edgeId) {
   }
 
   this._isPlaying = true;
-  this._currentSequenceFlow = edge;
-  this._currentWaypointIndex = 0;
-
-  if (!this._animationToken) {
-    this._animationToken = this._createTokenGfx();
-  }
-
-  let startTime = null;
-  const duration = ANIMATION_DURATION_BASE / this._speed;
-  const waypoints = edge.waypoints;
-
-  const animate = (currentTime) => {
-    if (!this._isPlaying) return;
-
-    if (!startTime) startTime = currentTime;
-    const progress = (currentTime - startTime) / duration;
-
-    if (progress < 1) {
-      const totalSegments = waypoints.length - 1;
-      const segmentProgress = progress * totalSegments;
-      const currentSegment = Math.floor(segmentProgress);
-      const segmentRatio = segmentProgress - currentSegment;
-
-      const startPoint = waypoints[currentSegment];
-      const endPoint = waypoints[currentSegment + 1];
-
-      const x = startPoint.x + (endPoint.x - startPoint.x) * segmentRatio;
-      const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
-
-      svgAttr(
-        this._animationToken,
-        "transform",
-        `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
-      );
-
-      this._animationFrameId = requestAnimationFrame(animate);
-    } else {
-      // Fine animazione su questo edge
-      this.reset();
-    }
-  };
-
-  this._animationFrameId = requestAnimationFrame(animate);
+  const token = this._createTokenGfx();
+  this._animateTokenAlongFlow(edge, 0, token);
 };
-
-
-
 
 CustomTokenAnimation.$inject = ["canvas", "eventBus", "elementRegistry"];
