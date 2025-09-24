@@ -11,18 +11,24 @@ export default function CustomTokenAnimationControls(tokenAnimation, eventBus) {
 CustomTokenAnimationControls.prototype._createControls = function () {
   // Contenitore dei controlli
   this._controlsContainer = document.createElement("div");
-  this._controlsContainer.className = "form-bottom-left"; // stesso stile del form Sequence Flow
+ this._controlsContainer.className = "token-animation-controls"; // 🔑 CAMBIA CLASSE
   this._controlsContainer.style.cssText = `
-    bottom: 160px;   /* più in alto rispetto al form Sequence Flow */
-    left: 20px;
-    position: absolute;
-    z-index: 100;
-    font-family: Arial, sans-serif;
-    font-size: 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-  `;
+  position: absolute;
+  bottom: 80px;
+  left: 20px;
+  z-index: 100;
+  font-family: Arial, sans-serif;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+
+  /* Rimuovi sfondo e bordo */
+  background: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+`;
 
   // Titolo semplice (senza riquadro attorno)
   const title = document.createElement("label");
