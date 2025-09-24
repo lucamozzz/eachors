@@ -8,9 +8,8 @@ import {
 import { is } from "bpmn-js/lib/util/ModelUtil";
 import './CustomTokenAnimation.css';
 
-
 const TOKEN_SIZE = 20;
-const ANIMATION_DURATION_BASE = 2000; // 2 secondi base
+const ANIMATION_DURATION_BASE = 2000;
 
 export default function CustomTokenAnimation(
   canvas,
@@ -21,14 +20,18 @@ export default function CustomTokenAnimation(
   this._eventBus = eventBus;
   this._elementRegistry = elementRegistry;
 
-  // variabili di stato
   this._isPlaying = false;
   this._speed = 1;
 
-  // mappe per tracciare animazioni/token e stato dei parallel gateway (join)
-  this._tokenAnimations = new Map(); // Map<tokenElement, frameId>
-  this._gatewayJoinState = new Map(); // Map<gatewayId, countArrived>
-  this._tokenStates = new Map(); // Map<token, { sequenceFlow, segmentIndex, ratio }>
+  this._tokenAnimations = new Map();
+  this._gatewayJoinState = new Map();
+  this._tokenStates = new Map();
+
+  this._activePopup = null;
+  
+  // 🔑 NUOVO: gestione token individuali su choreography
+  this._tokenChoreographyQueue = []; // Array di { token, task, messageShapes, messageIndex }
+  this._isProcessingPopup = false;
 
   this._bindEvents();
 }
@@ -37,24 +40,52 @@ CustomTokenAnimation.prototype._bindEvents = function () {
   this._eventBus.on("diagram.destroy", this.reset.bind(this));
 };
 
+/* -------------------------
+   CONTROLLO VELOCITÀ
+   ------------------------- */
+
+CustomTokenAnimation.prototype.setSpeed = function(speed) {
+  if (speed <= 0) {
+    console.warn("Speed deve essere maggiore di 0");
+    return;
+  }
+  this._speed = speed;
+  console.log("Velocità impostata a:", speed);
+};
+
+CustomTokenAnimation.prototype.getSpeed = function() {
+  return this._speed;
+};
+
+/* -------------------------
+   START / PAUSE / RESET
+   ------------------------- */
+
 CustomTokenAnimation.prototype.start = function () {
   if (this._isPlaying) return;
   this._isPlaying = true;
 
-  // 🔑 Resume se ci sono token salvati
-  if (this._tokenStates.size > 0) {
+  if (this._tokenStates && this._tokenStates.size > 0) {
+    const validStates = [];
+
     for (const [token, state] of this._tokenStates.entries()) {
-      this._animateTokenAlongFlow(
-        state.sequenceFlow,
-        state.segmentIndex,
-        token,
-        state.ratio
-      );
+      if (token && token.parentNode && state && state.sequenceFlow && state.sequenceFlow.waypoints) {
+        validStates.push([token, state]);
+      } else {
+        this._tokenStates.delete(token);
+      }
     }
-    return;
+
+    if (validStates.length > 0) {
+      validStates.forEach(([token, state]) => {
+        const totalSegments = state.sequenceFlow.waypoints.length - 1;
+        const startRatio = totalSegments > 0 ? ((state.segmentIndex + state.ratio) / totalSegments) : 0;
+        this._animateTokenAlongFlow(state.sequenceFlow, 0, token, startRatio);
+      });
+      return;
+    }
   }
 
-  // Altrimenti, avvio da StartEvent
   const startEventShape = this._elementRegistry.getAll().find(element => is(element, "bpmn:StartEvent"));
   if (!startEventShape || !startEventShape.outgoing || startEventShape.outgoing.length === 0) {
     console.warn("No start event or outgoing sequence flow found to start animation.");
@@ -67,50 +98,50 @@ CustomTokenAnimation.prototype.start = function () {
   this._animateTokenAlongFlow(firstFlow, 0, token);
 };
 
-
 CustomTokenAnimation.prototype.pause = function () {
-  // ferma tutto: cancella tutti i frame in corso ma non rimuove i token dall'SVG (così si può riprendere eventualmente)
   this._isPlaying = false;
   for (const frameId of this._tokenAnimations.values()) {
     cancelAnimationFrame(frameId);
   }
-  // non cancelliamo le entry dalla mappa qui, perché potremmo voler riprendere (ma nella nostra implementazione semplice riprenderà dall'inizio quando start viene chiamato).
   this._tokenAnimations.clear();
 };
 
 CustomTokenAnimation.prototype.reset = function () {
-  // stoppa le animazioni in corso
   this.pause();
 
-  // rimuovi tutti i token SVG presenti nel layer
   const group = this._getAnimationLayer();
   if (group) {
-    // rimuove tutti i figli (token)
     while (group.firstChild) {
       svgRemove(group.firstChild);
     }
   }
 
-  // pulisci tutte le mappe di stato
   this._tokenAnimations.clear();
   if (this._tokenStates) this._tokenStates.clear();
   this._gatewayJoinState.clear();
+  
+  // 🔑 NUOVO: pulisci coda choreography
+  this._tokenChoreographyQueue = [];
+  this._isProcessingPopup = false;
 
-  // rimuovi markers highlight
   const allElements = this._elementRegistry.getAll();
   allElements.forEach(element => {
-    this._canvas.removeMarker(element.id, 'highlight');
+    this._canvas.removeMarker(element.id, 'highlight-yellow');
+    this._canvas.removeMarker(element.id, 'highlight-green');
+    this._canvas.removeMarker(element.id, 'highlight-red');
   });
+
+  if (this._activePopup) {
+    try { document.body.removeChild(this._activePopup); } catch (e) {}
+    this._activePopup = null;
+  }
 
   this._isPlaying = false;
 };
 
-
-
-CustomTokenAnimation.prototype.setSpeed = function (speed) {
-  this._speed = speed;
-  // Nota: per semplicità i token già in volo non ricalcolano il tempo rimanente.
-};
+/* -------------------------
+   UTILITIES
+   ------------------------- */
 
 CustomTokenAnimation.prototype._createTokenGfx = function () {
   const group = this._getAnimationLayer();
@@ -132,7 +163,6 @@ CustomTokenAnimation.prototype._getAnimationLayer = function () {
   return group;
 };
 
-/* rimuove un singolo token (cancella anche il frameRequest associato) */
 CustomTokenAnimation.prototype._removeToken = function (token) {
   if (!token) return;
   const frameId = this._tokenAnimations.get(token);
@@ -140,6 +170,11 @@ CustomTokenAnimation.prototype._removeToken = function (token) {
     cancelAnimationFrame(frameId);
   }
   this._tokenAnimations.delete(token);
+  this._tokenStates.delete(token);
+  
+  // 🔑 NUOVO: rimuovi token anche dalla coda choreography
+  this._tokenChoreographyQueue = this._tokenChoreographyQueue.filter(item => item.token !== token);
+  
   try {
     svgRemove(token);
   } catch (e) {
@@ -147,19 +182,18 @@ CustomTokenAnimation.prototype._removeToken = function (token) {
   }
 };
 
-/**
- * Anima UN token lungo un sequenceFlow.
- * - sequenceFlow: l'edge con waypoints
- * - startWaypointIndex: opzionale
- * - token: elemento SVG del token. Se non passato, ne viene creato uno.
- */
+/* -------------------------
+   ANIMAZIONE TOKEN
+   ------------------------- */
 CustomTokenAnimation.prototype._animateTokenAlongFlow = function (
   sequenceFlow,
   startWaypointIndex = 0,
   token = null,
   startRatio = 0
 ) {
-  if (!this._isPlaying) return;
+  if (!this._isPlaying) {
+    return;
+  }
 
   if (!sequenceFlow || !sequenceFlow.waypoints || sequenceFlow.waypoints.length < 2) {
     if (token) this._removeToken(token);
@@ -167,7 +201,10 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (
   }
 
   const waypoints = sequenceFlow.waypoints;
-  if (!token) token = this._createTokenGfx();
+
+  if (!token) {
+    token = this._createTokenGfx();
+  }
 
   const duration = ANIMATION_DURATION_BASE / this._speed;
   let startTime = null;
@@ -177,7 +214,7 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (
 
     if (!startTime) startTime = currentTime;
     const elapsed = (currentTime - startTime) / duration;
-    const progress = startRatio + elapsed; // riparti dal punto giusto
+    const progress = startRatio + elapsed;
 
     if (progress < 1) {
       const totalSegments = waypoints.length - 1;
@@ -197,11 +234,11 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (
         `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
       );
 
-      // 🔑 salva lo stato del token
       this._tokenStates.set(token, {
         sequenceFlow,
         segmentIndex: currentSegment,
-        ratio: segmentRatio
+        ratio: segmentRatio,
+        targetElement: sequenceFlow.target
       });
 
       const frameId = requestAnimationFrame(animate);
@@ -217,46 +254,36 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (
   this._tokenAnimations.set(token, initialFrameId);
 };
 
+/* -------------------------
+   GESTIONE ELEMENTI
+   ------------------------- */
 
-/**
- * Decide cosa fare quando il token raggiunge un nuovo elemento
- * - nextElement: shape/bpmn element
- * - token: il token SVG che è arrivato
- */
 CustomTokenAnimation.prototype._handleNextElement = function (nextElement, token) {
   if (!token) return;
 
-  // se non c'è elemento successivo → token finito
   if (!nextElement) {
     this._removeToken(token);
     return;
   }
 
-  // se è EndEvent → elimina token
   if (is(nextElement, "bpmn:EndEvent")) {
     this._removeToken(token);
     return;
   }
 
-  // Se è ParallelGateway -> gestiamo join/split
   if (is(nextElement, "bpmn:ParallelGateway")) {
     const incomingCount = nextElement.incoming ? nextElement.incoming.length : 0;
     const outgoingCount = nextElement.outgoing ? nextElement.outgoing.length : 0;
 
-    // JOIN (gateway con più incoming e tipicamente 1 outgoing)
     if (incomingCount > 1 && outgoingCount >= 1) {
       const current = this._gatewayJoinState.get(nextElement.id) || 0;
       const newCount = current + 1;
       this._gatewayJoinState.set(nextElement.id, newCount);
 
-      // consumiamo/eliminiamo questo token
       this._removeToken(token);
 
       if (newCount === incomingCount) {
-        // tutti i token sono arrivati -> reset counter e uscita con 1 token
         this._gatewayJoinState.set(nextElement.id, 0);
-
-        // crea un nuovo token che esce dal gateway
         const outFlow = nextElement.outgoing[0];
         if (outFlow) {
           const newToken = this._createTokenGfx();
@@ -266,7 +293,6 @@ CustomTokenAnimation.prototype._handleNextElement = function (nextElement, token
       return;
     }
 
-    // SPLIT (un incoming -> più outgoing)
     if (outgoingCount > 1) {
       nextElement.outgoing.forEach((outFlow, idx) => {
         if (idx === 0) {
@@ -281,23 +307,21 @@ CustomTokenAnimation.prototype._handleNextElement = function (nextElement, token
   }
 
   if (is(nextElement, "bpmn:ExclusiveGateway")) {
-  if (nextElement.outgoing && nextElement.outgoing.length > 0) {
-    const randomIndex = Math.floor(Math.random() * nextElement.outgoing.length);
-    const chosenFlow = nextElement.outgoing[randomIndex];
-    this._animateTokenAlongFlow(chosenFlow, 0, token);
-  } else {
-    this._removeToken(token);
+    if (nextElement.outgoing && nextElement.outgoing.length > 0) {
+      const randomIndex = Math.floor(Math.random() * nextElement.outgoing.length);
+      const chosenFlow = nextElement.outgoing[randomIndex];
+      this._animateTokenAlongFlow(chosenFlow, 0, token);
+    } else {
+      this._removeToken(token);
+    }
+    return;
   }
-  return;
-}
 
-  // Choreography: colora i messageRef ma NON bloccare il token
-  if (this._isChoreographyWithMessages(nextElement)) {
+  if (this._isChoreographyWithVisibleMessages(nextElement)) {
     this._handleChoreographyTask(nextElement, token);
     return;
   }
 
-  // Normale: prosegui sugli outgoing (gestione split anche qui)
   if (nextElement.outgoing && nextElement.outgoing.length > 0) {
     if (nextElement.outgoing.length > 1) {
       nextElement.outgoing.forEach((outFlow, idx) => {
@@ -312,35 +336,55 @@ CustomTokenAnimation.prototype._handleNextElement = function (nextElement, token
       this._animateTokenAlongFlow(nextElement.outgoing[0], 0, token);
     }
   } else {
-    // nessun outgoing -> rimuovi token
     this._removeToken(token);
   }
 };
 
-CustomTokenAnimation.prototype._animateTokenAlongFlowWithToken = function (sequenceFlow, startWaypointIndex = 0, token) {
-  // mantenuta per compatibilità: delega alla versione unica
-  return this._animateTokenAlongFlow(sequenceFlow, startWaypointIndex, token);
+/* -------------------------
+   🔑 CHOREOGRAPHY COMPLETAMENTE RISCRITTA
+   ------------------------- */
+
+CustomTokenAnimation.prototype._isChoreographyWithVisibleMessages = function (element) {
+  if (!element || !is(element, "bpmn:ChoreographyTask")) {
+    return false;
+  }
+
+  const businessObject = element.businessObject;
+  if (!businessObject || !Array.isArray(businessObject.messageFlowRef) || businessObject.messageFlowRef.length === 0) {
+    return false;
+  }
+
+  // Scorri tutti i messageFlowRef
+  for (const flow of businessObject.messageFlowRef) {
+    const messageElement = flow.messageRef;
+
+    // Filtro: ignora messageRef senza name né documentation
+    if (!messageElement || !messageElement.id) {
+      continue;
+    }
+    if (!messageElement.name && (!messageElement.documentation || messageElement.documentation.length === 0)) {
+      continue;
+    }
+
+    // Se esiste la shape del messaggio, consideralo valido
+    const messageShape = this._elementRegistry.getAll().find(el =>
+      el.businessObject === messageElement
+    );
+    if (messageShape) {
+      return true;
+    }
+  }
+
+  return false;
 };
 
-/**
- * Controlla se l’elemento è un ChoreographyTask con messaggi
- */
-CustomTokenAnimation.prototype._isChoreographyWithMessages = function (element) {
-  return (
-    element &&
-    is(element, "bpmn:ChoreographyTask") &&
-    element.businessObject &&
-    Array.isArray(element.businessObject.messageFlowRef) &&
-    element.businessObject.messageFlowRef.length > 0
-  );
-};
 
 /**
- * Gestisce la colorazione e la logica dei messaggi di un ChoreographyTask
- * Nota: NON lascia il token fermo, lo fa proseguire subito (split se più outgoing).
+ * 🔑 COMPLETAMENTE RISCRITTA: Ogni token viene gestito individualmente
  */
 CustomTokenAnimation.prototype._handleChoreographyTask = function (task, token) {
   const messageFlows = task.businessObject.messageFlowRef || [];
+  const messageShapes = [];
 
   messageFlows.forEach(flow => {
     const messageElement = flow.messageRef;
@@ -348,26 +392,115 @@ CustomTokenAnimation.prototype._handleChoreographyTask = function (task, token) 
       const messageShape = this._elementRegistry.getAll().find(el =>
         el.businessObject === messageElement
       );
-
       if (messageShape) {
-        this.colorElement(messageShape.id, "yellow");
-      } else {
-        console.warn("Shape non trovato per messageRef", messageElement.id);
+        messageShapes.push(messageShape);
       }
     }
   });
 
-  // subito avanti (non lasciare il token fermo)
+  // 👉 Ordina i messaggi da sopra (y minore) a sotto (y maggiore)
+  messageShapes.sort((a, b) => a.y - b.y);
+
+  if (messageShapes.length === 0) {
+    if (task.outgoing && task.outgoing.length > 0) {
+      this._animateTokenAlongFlow(task.outgoing[0], 0, token);
+    } else {
+      this._removeToken(token);
+    }
+    return;
+  }
+
+  // Ferma questo token
+  this._pauseSpecificToken(token);
+
+  // Aggiungi questo token alla coda con il suo stato individuale
+  const tokenData = {
+    token: token,
+    task: task,
+    messageShapes: messageShapes,
+    messageIndex: 0 // inizia dal primo messaggio
+  };
+
+  this._tokenChoreographyQueue.push(tokenData);
+
+  // Se non stiamo già processando popup, inizia
+  if (!this._isProcessingPopup) {
+    this._processNextTokenInQueue();
+  }
+};
+
+
+/**
+ * 🔑 NUOVO: Processa i token uno alla volta dalla coda
+ */
+CustomTokenAnimation.prototype._processNextTokenInQueue = function() {
+  if (this._tokenChoreographyQueue.length === 0) {
+    this._isProcessingPopup = false;
+    return;
+  }
+
+  this._isProcessingPopup = true;
+  const tokenData = this._tokenChoreographyQueue[0]; // prendi il primo
+
+  // Evidenzia tutti i messaggi di questo token in giallo
+  tokenData.messageShapes.forEach(sh => this.colorElement(sh.id, "yellow"));
+
+  // Inizia la sequenza popup per questo token
+  this._processTokenMessages(tokenData);
+};
+
+/**
+ * 🔑 NUOVO: Processa i messaggi per un singolo token
+ */
+CustomTokenAnimation.prototype._processTokenMessages = function(tokenData) {
+  if (tokenData.messageIndex >= tokenData.messageShapes.length) {
+    // Finiti i messaggi per questo token: rimuovilo dalla coda e continua
+    this._tokenChoreographyQueue.shift(); // rimuovi il primo elemento
+    this._resumeToken(tokenData);
+    
+    // Processa il prossimo token nella coda
+    setTimeout(() => {
+      this._processNextTokenInQueue();
+    }, 100); // piccolo delay per evitare sovrapposizioni
+    return;
+  }
+
+  const shape = tokenData.messageShapes[tokenData.messageIndex];
+  
+  this._showMessagePopup(shape, () => {
+    // OK -> verde
+    this.colorElement(shape.id, "green");
+    tokenData.messageIndex++;
+    this._processTokenMessages(tokenData);
+  }, () => {
+    // NO/chiudi -> rosso
+    this.colorElement(shape.id, "red");
+    tokenData.messageIndex++;
+    this._processTokenMessages(tokenData);
+  });
+};
+
+/**
+ * 🔑 NUOVO: Riprende un singolo token dopo aver completato i suoi popup
+ */
+CustomTokenAnimation.prototype._resumeToken = function(tokenData) {
+  const { token, task } = tokenData;
+  
+  if (!token || !token.parentNode) {
+    return;
+  }
+
+  // Continua l'animazione di questo token
   if (task.outgoing && task.outgoing.length > 0) {
     if (task.outgoing.length > 1) {
-      task.outgoing.forEach((outFlow, idx) => {
-        if (idx === 0) {
-          this._animateTokenAlongFlow(outFlow, 0, token);
-        } else {
-          const newToken = this._createTokenGfx();
-          this._animateTokenAlongFlow(outFlow, 0, newToken);
-        }
-      });
+      // Per split, usa il primo outgoing per il token corrente
+      this._animateTokenAlongFlow(task.outgoing[0], 0, token);
+      
+      // Crea nuovi token per gli altri outgoing
+      for (let i = 1; i < task.outgoing.length; i++) {
+        const newToken = this._createTokenGfx();
+        this._animateTokenAlongFlow(task.outgoing[i], 0, newToken);
+      }
     } else {
       this._animateTokenAlongFlow(task.outgoing[0], 0, token);
     }
@@ -376,13 +509,114 @@ CustomTokenAnimation.prototype._handleChoreographyTask = function (task, token) 
   }
 };
 
+/**
+ * Ferma solo un token specifico
+ */
+CustomTokenAnimation.prototype._pauseSpecificToken = function(token) {
+  const frameId = this._tokenAnimations.get(token);
+  if (frameId) {
+    cancelAnimationFrame(frameId);
+    this._tokenAnimations.delete(token);
+  }
+};
+
+/* Mostra popup (invariato) */
+CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onConfirm, onReject) {
+  if (this._activePopup) {
+    try { document.body.removeChild(this._activePopup); } catch (e) {}
+    this._activePopup = null;
+  }
+
+  const popup = document.createElement("div");
+  popup.className = "token-popup";
+
+  const header = document.createElement("div");
+  header.style.display = "flex";
+  header.style.justifyContent = "space-between";
+  header.style.alignItems = "center";
+
+  const title = document.createElement("div");
+  title.innerText = messageShape.businessObject.name || "Messaggio";
+  title.style.fontWeight = "700";
+
+  const closeBtn = document.createElement("button");
+  closeBtn.innerText = "✕";
+  closeBtn.style.border = "none";
+  closeBtn.style.background = "transparent";
+  closeBtn.style.cursor = "pointer";
+
+  header.appendChild(title);
+  header.appendChild(closeBtn);
+  popup.appendChild(header);
+
+  const body = document.createElement("div");
+  body.style.marginTop = "10px";
+  body.innerText = messageShape.businessObject.documentation && messageShape.businessObject.documentation.length
+    ? (messageShape.businessObject.documentation[0].text || "")
+    : "";
+  popup.appendChild(body);
+
+  const actions = document.createElement("div");
+  actions.style.marginTop = "12px";
+  actions.style.display = "flex";
+  actions.style.gap = "8px";
+  const okBtn = document.createElement("button");
+  okBtn.innerText = "OK";
+  const noBtn = document.createElement("button");
+  noBtn.innerText = "NO";
+  actions.appendChild(okBtn);
+  actions.appendChild(noBtn);
+  popup.appendChild(actions);
+
+  document.body.appendChild(popup);
+  this._activePopup = popup;
+
+  const cleanup = () => {
+    if (this._activePopup) {
+      try { document.body.removeChild(this._activePopup); } catch (e) {}
+      this._activePopup = null;
+    }
+  };
+
+  closeBtn.addEventListener("click", () => {
+    cleanup();
+    if (onReject) onReject();
+  });
+
+  noBtn.addEventListener("click", () => {
+    cleanup();
+    if (onReject) onReject();
+  });
+
+  okBtn.addEventListener("click", () => {
+    cleanup();
+    if (onConfirm) onConfirm();
+  });
+};
+
+/* -------------------------
+   COLORAZIONE E METODI HELPER (invariati)
+   ------------------------- */
+
 CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
-  this._canvas.removeMarker(elementId, 'highlight'); // rimuove marker precedente
-  this._canvas.addMarker(elementId, 'highlight');    // aggiunge nuovo marker con classe CSS
+  this._canvas.removeMarker(elementId, 'highlight-yellow');
+  this._canvas.removeMarker(elementId, 'highlight-green');
+  this._canvas.removeMarker(elementId, 'highlight-red');
+
+  if (color === "yellow") {
+    this._canvas.addMarker(elementId, 'highlight-yellow');
+  } else if (color === "green") {
+    this._canvas.addMarker(elementId, 'highlight-green');
+  } else if (color === "red") {
+    this._canvas.addMarker(elementId, 'highlight-red');
+  }
+};
+
+CustomTokenAnimation.prototype._animateTokenAlongFlowWithToken = function (sequenceFlow, startWaypointIndex = 0, token) {
+  return this._animateTokenAlongFlow(sequenceFlow, startWaypointIndex, token);
 };
 
 CustomTokenAnimation.prototype.animateEdge = function(edgeId) {
-  // ferma eventuali animazioni precedenti e lancia animazione su un solo edge
   this.reset();
 
   const edge = this._elementRegistry.get(edgeId);
