@@ -229,10 +229,11 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (
       const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
 
       svgAttr(
-        token,
-        "transform",
-        `translate(${x - TOKEN_SIZE / 2}, ${y - TOKEN_SIZE / 2})`
-      );
+  token,
+  "transform",
+  `translate(${x}, ${y})`
+);
+
 
       this._tokenStates.set(token, {
         sequenceFlow,
