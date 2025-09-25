@@ -305,6 +305,16 @@ CustomTokenAnimation.prototype._handleNextElement = function (nextElement, token
       return;
     }
   }
+ // === MENU MANUALE SU EVENT-BASED-GATEWAY ===
+  if (is(nextElement, "bpmn:EventBasedGateway")) {
+    if (nextElement.outgoing && nextElement.outgoing.length > 0) {
+      this._showEventBasedGatewayPopup(nextElement, token);
+    } else {
+      this._removeToken(token);
+    }
+    return;
+  }
+
 
   if (is(nextElement, "bpmn:ExclusiveGateway")) {
     if (nextElement.outgoing && nextElement.outgoing.length > 0) {
@@ -427,6 +437,85 @@ CustomTokenAnimation.prototype._handleChoreographyTask = function (task, token) 
   if (!this._isProcessingPopup) {
     this._processNextTokenInQueue();
   }
+};
+
+CustomTokenAnimation.prototype._showEventBasedGatewayPopup = function(gateway, token) {
+  // Se è già presente un popup, chiudi
+  if (this._activePopup) {
+    try { document.body.removeChild(this._activePopup); } catch (e) {}
+    this._activePopup = null;
+  }
+
+  const popup = document.createElement("div");
+  popup.className = "token-popup";
+  popup.style.zIndex = 9999; // assicura che sia in primo piano
+
+  // Titolo
+  const title = document.createElement("div");
+  title.innerText = "Scegli il ramo da eseguire";
+  title.style.fontWeight = "700";
+  title.style.marginBottom = "8px";
+  popup.appendChild(title);
+
+  // Select
+  const select = document.createElement("select");
+  gateway.outgoing.forEach((flow, idx) => {
+    const opt = document.createElement("option");
+    opt.value = idx;
+    // Prova a mostrare il nome label, se c'è
+    opt.innerText = flow.businessObject && flow.businessObject.name
+      ? flow.businessObject.name
+      : "Ramo " + (idx + 1);
+    select.appendChild(opt);
+  });
+  popup.appendChild(select);
+
+  // Conferma
+  const okBtn = document.createElement("button");
+  okBtn.innerText = "OK";
+  okBtn.style.marginLeft = "10px";
+
+  okBtn.addEventListener("click", () => {
+    const idx = parseInt(select.value, 10);
+    const chosenFlow = gateway.outgoing[idx];
+    if (chosenFlow) {
+      // Rimuovi popup, continua il token su quel ramo
+      if (this._activePopup) {
+        try { document.body.removeChild(this._activePopup); } catch (e) {}
+        this._activePopup = null;
+      }
+      this._animateTokenAlongFlow(chosenFlow, 0, token);
+    }
+  });
+  popup.appendChild(okBtn);
+
+  // Chiudi (opzionale, puoi anche non aggiungerlo)
+  const closeBtn = document.createElement("button");
+  closeBtn.innerText = "✕";
+  closeBtn.style.marginLeft = "8px";
+  closeBtn.style.background = "transparent";
+  closeBtn.style.border = "none";
+  closeBtn.style.cursor = "pointer";
+  closeBtn.addEventListener("click", () => {
+    try { document.body.removeChild(popup); } catch (e) {}
+    this._activePopup = null;
+    this._removeToken(token); // Se chiudi il popup perdi il token
+  });
+  popup.appendChild(closeBtn);
+
+  // Visualizza
+  popup.style.position = "fixed";
+  popup.style.top = "120px";
+  popup.style.left = "50%";
+  popup.style.transform = "translateX(-50%)";
+  popup.style.padding = "14px";
+  popup.style.background = "#fff";
+  popup.style.border = "1px solid #aaa";
+  popup.style.borderRadius = "7px";
+  popup.style.boxShadow = "0 2px 10px rgba(0,0,0,0.16)";
+
+  document.body.appendChild(popup);
+  this._activePopup = popup;
 };
 
 
