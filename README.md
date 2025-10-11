@@ -60,5 +60,17 @@ The demo is then served to `http://localhost:9013` as a production build using t
 
 MIT
 
-## Command for start BPMN to solidity conversion
- node .\app\bpmn-to-solidity\index-enhanced.js .\app\bpmn-to-solidity\examples\hotel.bpmn
+## How to start the software (Back-end)
+From the root (echors) digit: node .\bpmn-to-solidity\server.cjs  For start the back-end
+
+## How to start the Front-End 
+From the root (echors) digit: npm run dev
+
+## Autore
+Questo software è stato sviluppato da [Alessio Prosperi]
+Contatti: [alessio2066@gmail.com] | [https://github.com/SaltyEner] 
+
+## Note sulle dipendenze
+
+Questo progetto utilizza e modifica la libreria open source [chor-js](https://github.com/bptlab/chor-js), originariamente sviluppata da Jan Ladleif e altri contributori, sotto licenza MIT.  
+Si riconosce e si ringrazia il lavoro originale degli autori di chor-js.

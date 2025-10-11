@@ -15,6 +15,12 @@
     "name": "Jan Ladleif",
     "url": "https://github.com/jan-ladleif"
   },
+  "contributors": [
+    {
+      "name": "Alessio Prosperi",
+      "url": "https://github.com/SaltyEnergy"
+    }
+  ],
   "license": "MIT",
   "repository": {
     "type": "git",
