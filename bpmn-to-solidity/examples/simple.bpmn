@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://bpmn.io/schema/bpmn">
+  <process id="Process_1" isExecutable="true" name="SimpleProcess">
+    <startEvent id="StartEvent_1" name="Start"/>
+    <task id="Task_1" name="ProcessData"/>
+    <exclusiveGateway id="Gateway_1" name="Decision"/>
+    <task id="Task_2" name="ApproveData"/>
+    <task id="Task_3" name="RejectData"/>
+    <endEvent id="EndEvent_1" name="End"/>
+    
+    <sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_1"/>
+    <sequenceFlow id="Flow_2" sourceRef="Task_1" targetRef="Gateway_1"/>
+    <sequenceFlow id="Flow_3" sourceRef="Gateway_1" targetRef="Task_2"/>
+    <sequenceFlow id="Flow_4" sourceRef="Gateway_1" targetRef="Task_3"/>
+    <sequenceFlow id="Flow_5" sourceRef="Task_2" targetRef="EndEvent_1"/>
+    <sequenceFlow id="Flow_6" sourceRef="Task_3" targetRef="EndEvent_1"/>
+  </process>
+</definitions>

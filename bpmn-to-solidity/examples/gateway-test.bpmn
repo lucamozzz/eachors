@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<bpmn:definitions xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                  xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
+                  xmlns:bpmndi="http://www.omg.org/spec/BPMN/20100524/DI"
+                  xmlns:dc="http://www.omg.org/spec/DD/20100524/DC"
+                  id="Definitions_1"
+                  targetNamespace="http://bpmn.io/schema/bpmn">
+
+  <bpmn:process id="Process_Gateway_Test" isExecutable="true">
+
+    <!-- Start -->
+    <bpmn:startEvent id="StartEvent_1" name="Start" />
+
+    <!-- Task before split -->
+    <bpmn:task id="Task_A" name="Initial Task" />
+
+    <!-- Exclusive Gateway -->
+    <bpmn:exclusiveGateway id="XOR_1" name="Exclusive Gateway" default="Flow_XOR_Default" />
+
+    <bpmn:sequenceFlow id="Flow_1" sourceRef="StartEvent_1" targetRef="Task_A" />
+    <bpmn:sequenceFlow id="Flow_2" sourceRef="Task_A" targetRef="XOR_1" />
+
+    <bpmn:sequenceFlow id="Flow_XOR_1" sourceRef="XOR_1" targetRef="Task_B">
+      <bpmn:conditionExpression xsi:type="bpmn:tFormalExpression">x &gt; 10</bpmn:conditionExpression>
+    </bpmn:sequenceFlow>
+
+    <bpmn:sequenceFlow id="Flow_XOR_Default" sourceRef="XOR_1" targetRef="Task_C" />
+
+    <!-- Tasks after XOR -->
+    <bpmn:task id="Task_B" name="Path B" />
+    <bpmn:task id="Task_C" name="Path C (Default)" />
+
+    <!-- Inclusive Gateway -->
+    <bpmn:inclusiveGateway id="OR_1" name="Inclusive Gateway" />
+
+    <bpmn:sequenceFlow id="Flow_3" sourceRef="Task_B" targetRef="OR_1" />
+    <bpmn:sequenceFlow id="Flow_4" sourceRef="Task_C" targetRef="OR_1" />
+
+    <!-- Parallel Gateway -->
+    <bpmn:parallelGateway id="AND_1" name="Parallel Gateway" />
+
+    <bpmn:sequenceFlow id="Flow_5" sourceRef="OR_1" targetRef="AND_1" />
+
+    <bpmn:sequenceFlow id="Flow_AND_1" sourceRef="AND_1" targetRef="Task_D" />
+    <bpmn:sequenceFlow id="Flow_AND_2" sourceRef="AND_1" targetRef="Task_E" />
+
+    <bpmn:task id="Task_D" name="Parallel Task D" />
+    <bpmn:task id="Task_E" name="Parallel Task E" />
+
+    <!-- Event-Based Gateway (simulazione eventi) -->
+    <bpmn:eventBasedGateway id="EV_1" name="Event Gateway" />
+
+    <bpmn:sequenceFlow id="Flow_6" sourceRef="Task_E" targetRef="EV_1" />
+
+    <bpmn:intermediateCatchEvent id="Event_Timer" name="Timer Event">
+      <bpmn:timerEventDefinition />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:intermediateCatchEvent id="Event_Message" name="Message Event">
+      <bpmn:messageEventDefinition />
+    </bpmn:intermediateCatchEvent>
+
+    <bpmn:sequenceFlow id="Flow_Ev1" sourceRef="EV_1" targetRef="Event_Timer" />
+    <bpmn:sequenceFlow id="Flow_Ev2" sourceRef="EV_1" targetRef="Event_Message" />
+
+    <!-- End Events -->
+    <bpmn:endEvent id="End_1" name="End Timer" />
+    <bpmn:endEvent id="End_2" name="End Message" />
+
+    <bpmn:sequenceFlow id="Flow_End1" sourceRef="Event_Timer" targetRef="End_1" />
+    <bpmn:sequenceFlow id="Flow_End2" sourceRef="Event_Message" targetRef="End_2" />
+
+  </bpmn:process>
+
+  <!-- BPMN Diagram -->
+  <bpmndi:BPMNDiagram id="BPMNDiagram_1">
+    <bpmndi:BPMNPlane id="BPMNPlane_1" bpmnElement="Process_Gateway_Test" />
+  </bpmndi:BPMNDiagram>
+</bpmn:definitions>

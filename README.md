@@ -59,3 +59,6 @@ The demo is then served to `http://localhost:9013` as a production build using t
 ## License
 
 MIT
+
+## Command for start BPMN to solidity conversion
+ node .\app\bpmn-to-solidity\index-enhanced.js .\app\bpmn-to-solidity\examples\hotel.bpmn

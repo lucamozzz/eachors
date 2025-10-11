@@ -12,6 +12,11 @@ import xml from './diagrams/pizzaDelivery.bpmn';
 import blankXml from './diagrams/newDiagram.bpmn';
 import messageTypeModdle from './chor-js/extension.json';
 import studentData from './chor-js/student.json';
+import { addDeployButtonToCanvas } from './deploy-ui.js'; // un modulo nel frontend che chiama fetch
+
+
+
+
 
 window.bpenvModeler = bpenvModeler;
 // Modulo DI che fornisce getPlaces
@@ -45,7 +50,9 @@ msg: messageTypeModdle
 });
 
 
+
 const eventBus = modeler.get('eventBus');
+
 
 eventBus.on('selection.changed', function(event) {
   const newlySelected = event.newSelection && event.newSelection[0];
@@ -228,7 +235,7 @@ modeler.on('import.render.complete', () => {
   
   try {
     const tokenAnimation = modeler.get('customTokenAnimation');
-    animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
+    animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'), modeler);
   } catch (error) {
     console.warn('Token animation not available:', error);
   }
@@ -359,7 +366,7 @@ modeler.on('commandStack.changed', () => {
   }
   isDirty = true;
 });
-
+addDeployButtonToCanvas(modeler);
 // Renderizza il modellatore BPEnv nella colonna di destra
 bpenvModeler.render('bpenv-container');
 setTimeout(function() {
@@ -369,7 +376,6 @@ setTimeout(function() {
     console.error("bpenvModeler.getPlaces non trovata!");
   }
 }, 1000);
-
 
 // Carica e visualizza il diagramma BPMN di default all'avvio
 renderModel(xml);
