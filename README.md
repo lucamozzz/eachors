@@ -61,7 +61,7 @@ The demo is then served to `http://localhost:9013` as a production build using t
 MIT
 
 ## How to start the software (Back-end)
-From the root (echors) digit: node .\bpmn-to-solidity\server.cjs  For start the back-end
+From the root (echors) digit: node .\bpmn-to-solidity\server.js  For start the back-end
 
 ## How to start the Front-End 
 From the root (echors) digit: npm run dev

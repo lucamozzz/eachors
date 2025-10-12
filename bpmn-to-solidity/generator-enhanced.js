@@ -1,4 +1,4 @@
-const { ChoreographyTask, Gateway } = require('./model-enhanced.cjs');
+const { ChoreographyTask, Gateway } = require('./model-enhanced.js');
 
 // Generatore dinamico di contratti Solidity
 class SolidityGenerator {

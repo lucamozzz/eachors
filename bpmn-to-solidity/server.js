@@ -3,9 +3,9 @@
 const express    = require('express');
 const cors       = require('cors');
 const bodyParser = require('body-parser');
-const { parseBpmn }              = require('./parser-enhanced.cjs');
-const { buildIntermediateModel } = require('./model-enhanced.cjs');
-const { generateSolidity }       = require('./generator-enhanced.cjs');
+const { parseBpmn }              = require('./parser-enhanced.js');
+const { buildIntermediateModel } = require('./model-enhanced.js');
+const { generateSolidity }       = require('./generator-enhanced.js');
 
 const app = express();
 
