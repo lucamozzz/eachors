@@ -4,6 +4,8 @@ const express    = require('express');
 const cors       = require('cors');
 const bodyParser = require('body-parser');
 const { parseBpmn }              = require('./parser-enhanced.js');
+const fs = require('fs');
+const path = require('path');
 const { buildIntermediateModel } = require('./model-enhanced.js');
 const { generateSolidity }       = require('./generator-enhanced.js');
 
@@ -22,7 +24,14 @@ app.use(bodyParser.text({ type: 'application/xml' }));
 app.post('/convert', async (req, res) => {
   console.log('>>> Received XML length:', req.body.length);
   try {
-    const parsed = await parseBpmn(req.body);
+    // Scrive il body XML su un file temporaneo
+    const tempFilePath = path.join(__dirname, 'temp_bpmn.xml');
+    fs.writeFileSync(tempFilePath, req.body);
+
+    const parsed = await parseBpmn(tempFilePath);
+    
+    // Rimuove il file temporaneo
+    fs.unlinkSync(tempFilePath);
     const model  = buildIntermediateModel(parsed);
     const code   = generateSolidity(model);
     console.log("Sending response")
