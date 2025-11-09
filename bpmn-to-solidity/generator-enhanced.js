@@ -41,8 +41,8 @@ class SolidityGenerator {
 
   generateHeader() {
     return `// SPDX-License-Identifier: MIT
-pragma solidity ^0.5.3;
-pragma experimental ABIEncoderV2;
+pragma solidity ^0.8.0;
+
 
 contract ${this.model.processName} {
 `;
@@ -107,7 +107,7 @@ contract ${this.model.processName} {
 
   generateConstructor() {
     const roles = this.model.getRoles();
-    let result = `  constructor() public {
+    let result = `  constructor() {
     // Struct instantiation
     for (uint i = 0; i < elementsID.length; i++) {
       elements.push(Element(elementsID[i], State.DISABLED));
@@ -117,8 +117,9 @@ contract ${this.model.processName} {
     // Roles definition
 `;
     roles.forEach(role => {
-      result += `    roles["${role}"] = 0x7A224d367EB99e849dC80F3d7b9FAC9E03Fe8Be0;\n`;
-    });
+  result += `    roles["${role}"] = payable(0x7A224d367EB99e849dC80F3d7b9FAC9E03Fe8Be0);\n`;
+      });
+
     result += `
     // Enable the start process
     init();
@@ -184,11 +185,11 @@ contract ${this.model.processName} {
 
   function subscribe_as_participant(string memory _role) public {
     if(optionalRoles[_role] == 0x0000000000000000000000000000000000000000) {
-      optionalRoles[_role] = msg.sender;
+      optionalRoles[_role] = payable(msg.sender);
     }
   }
 
-  function() external payable {
+ receive() external payable {
   }
 
 `;
