@@ -23,6 +23,7 @@
   "assetTypesToStringify": [
     "bpmn"
   ],
+  "type": "module",
   "browserslist": [
     "last 2 Firefox versions",
     "last 2 Chrome versions",
@@ -46,11 +47,13 @@
     "bpmn-moddle": "^9.0.4",
     "chor-js": "^0.7.1",
     "cors": "^2.8.5",
+    "ethers": "^6.15.0",
     "express": "^5.1.0",
+    "hardhat": "^3.0.15",
     "inherits": "^2.0.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
-    "solc": "^0.8.30",
+    "solc": "^0.8.0",
     "web3": "^4.16.0",
     "xmldom": "^0.6.0"
   }

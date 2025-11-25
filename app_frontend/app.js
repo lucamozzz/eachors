@@ -11,18 +11,7 @@ import TokenAnimationModule from './chor-js/lib/features/token-animation/index.j
 import xml from './diagrams/pizzaDelivery.bpmn';
 import blankXml from './diagrams/newDiagram.bpmn';
 import messageTypeModdle from './chor-js/extension.json';
-// import studentData from './chor-js/student.json';
-// import { addDeployButtonToCanvas } from './deploy-ui.js'; // un modulo nel frontend che chiama fetch
-
-
-
-
-
 window.bpenvModeler = bpenvModeler;
-// Modulo DI che fornisce getPlaces
-
-
-
 
 let lastFile;
 let isValidating = false;
@@ -282,8 +271,19 @@ resizer.addEventListener('mousedown', (e) => {
   document.addEventListener('mouseup', onMouseUp);
 });
 
+document.getElementById('js-deploy').addEventListener('click', async () => {
+  const response = await fetch('http://localhost:3000/deploy', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({})
+  });
 
+  const result = await response.json();
+  console.log(result);
+});
 
+bpenvModeler.render('bpenv-container');
+renderModel(xml);
 
 
 // Funzione per aggiornare la select degli elementi BPMN (messaggi, gateway, eventi, ecc.)
@@ -368,7 +368,7 @@ resizer.addEventListener('mousedown', (e) => {
 // });
 // addDeployButtonToCanvas(modeler);
 // Renderizza il modellatore BPEnv nella colonna di destra
-bpenvModeler.render('bpenv-container');
+// bpenvModeler.render('bpenv-container');
 // setTimeout(function() {
 //   if (typeof window.bpenvModeler?.getPlaces === 'function') {
 //     console.log("DEBUG PLACES FROM WINDOW after rendering:", window.bpenvModeler.getPlaces());
@@ -378,4 +378,4 @@ bpenvModeler.render('bpenv-container');
 // }, 1000);
 
 // Carica e visualizza il diagramma BPMN di default all'avvio
-renderModel(xml);
+// renderModel(xml);
