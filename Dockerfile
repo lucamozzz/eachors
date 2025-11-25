@@ -4,7 +4,7 @@ WORKDIR /usr/src
 # copy both package and package-lock
 COPY package*.json ./
 
-COPY app ./app
+COPY app_frontend ./app
 RUN npm install
 RUN npm run build
 

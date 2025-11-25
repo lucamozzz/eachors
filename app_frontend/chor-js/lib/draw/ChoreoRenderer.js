@@ -40,16 +40,16 @@ export default function ChoreoRenderer(config, eventBus, textRenderer, pathMap) 
   // white and strokes are black.
   function getFillColor(di, override) {
     return di.get('bioc:fill') ||
-           (config && config.defaultFillColor) ||
-           override ||
-           'white';
+      (config && config.defaultFillColor) ||
+      override ||
+      'white';
   }
 
   function getStrokeColor(di, override) {
     return di.get('bioc:stroke') ||
-           (config && config.defaultStrokeColor) ||
-           override ||
-           'black';
+      (config && config.defaultStrokeColor) ||
+      override ||
+      'black';
   }
 
   // Label convenience functions
@@ -75,7 +75,7 @@ export default function ChoreoRenderer(config, eventBus, textRenderer, pathMap) 
   }
 
   // Message drawing function
-  this.drawMessage = function(p, element) {
+  this.drawMessage = function (p, element) {
     let bandKind = element.parent.diBand.participantBandKind || 'top-initiating';
     let isBottom = bandKind.startsWith('bottom');
     let isInitiating = !bandKind.endsWith('non_initiating');
@@ -127,17 +127,27 @@ export default function ChoreoRenderer(config, eventBus, textRenderer, pathMap) 
       if (icon) {
         // Position the icon next to the message envelope
         svgAttr(icon, {
-          transform: `translate(${element.width + 5}, ${element.height / 2 - 8})`
+          transform: `translate(${element.width + 10}, ${element.height / 2 - 15})`
         });
         svgAppend(p, icon);
       }
     }
 
+    let guardType = element.businessObject.get('guardType');
+    if (guardType !== 'base') {
+      let icon = createGuardTypeIcon(guardType);
+      if (icon) {
+        svgAttr(icon, {
+          transform: `translate(${-(element.width + 5)}, ${element.height / 2 - 15})`
+        });
+        svgAppend(p, icon);
+      }
+    }
     return p;
   };
 
   // Participant band drawing function
-  this.drawParticipantBand = function(p, element) {
+  this.drawParticipantBand = function (p, element) {
     const bandKind = element.diBand.participantBandKind || 'top-initiating';
     const isInitiating = !bandKind.endsWith('non_initiating');
     const isTop = bandKind.startsWith('top');
@@ -220,12 +230,12 @@ export default function ChoreoRenderer(config, eventBus, textRenderer, pathMap) 
   };
 
   // Choreography activity drawing function
-  this.drawChoreographyActivity = function(p, element) {
+  this.drawChoreographyActivity = function (p, element) {
     // Draw the outer stroke and background
     let shape = svgCreate('path');
     svgAttr(shape, {
       d: getTaskOutline(
-        0, 0, element.width, element.height,is(element, 'bpmn:CallChoreography') ? 2 : 0
+        0, 0, element.width, element.height, is(element, 'bpmn:CallChoreography') ? 2 : 0
       ),
       fill: getFillColor(element.businessObject.di),
       fillOpacity: DEFAULT_FILL_OPACITY,
@@ -384,13 +394,13 @@ ChoreoRenderer.$inject = [
   'pathMap'
 ];
 
-ChoreoRenderer.prototype.canRender = function(element) {
+ChoreoRenderer.prototype.canRender = function (element) {
   return is(element, 'bpmn:ChoreographyActivity') ||
     is(element, 'bpmn:Participant') ||
     is(element, 'bpmn:Message');
 };
 
-ChoreoRenderer.prototype.drawShape = function(p, element) {
+ChoreoRenderer.prototype.drawShape = function (p, element) {
   if (is(element, 'bpmn:ChoreographyActivity')) {
     return this.drawChoreographyActivity(p, element);
   } else if (is(element, 'bpmn:Participant')) {
@@ -400,7 +410,7 @@ ChoreoRenderer.prototype.drawShape = function(p, element) {
   }
 };
 
-ChoreoRenderer.prototype.getShapePath = function(shape) {
+ChoreoRenderer.prototype.getShapePath = function (shape) {
   if (is(shape, 'bpmn:ChoreographyActivity')) {
     return getTaskOutline(shape.x, shape.y, shape.width, shape.height, is(shape, 'bpmn:CallChoreography') ? 6 : 1);
   } else if (is(shape, 'bpmn:Participant')) {
@@ -514,19 +524,16 @@ function drawRect(parentGfx, width, height, attrs) {
   return rect;
 }
 
-
 function createMessageTypeIcon(messageType) {
   // crea <image> e punta al file svg esterno
   const img = svgCreate('image'); // tiny-svg
   // dimensioni coerenti con l’icona precedente 16x16
-  svgAttr(img, { width: 16, height: 16 });
+  svgAttr(img, { width: 30, height: 30 });
 
   // mappa tipo -> asset
   const href =
     messageType === 'movement'
       ? require('../../../icons/movement.svg')   // allegato movement.jpg convertito a SVG o l’SVG equivalente
-      : messageType === 'environmental'
-      ? require('../../../icons/world.svg')      // world-svgrepo-com-1.svg
       : null;
 
   if (!href) return null;
@@ -538,3 +545,27 @@ function createMessageTypeIcon(messageType) {
   return img;
 }
 
+function createGuardTypeIcon(guardType) {
+  // crea <image> e punta al file svg esterno
+  const img = svgCreate('image'); // tiny-svg
+  // dimensioni coerenti con l’icona precedente 16x16
+  svgAttr(img, { width: 30, height: 30 });
+
+  // mappa tipo -> asset
+  const href =
+    guardType === 'environmental'
+      ? require('../../../icons/environmental.svg')
+      : guardType === 'position'
+      ? require('../../../icons/position.svg')
+      : guardType === 'reachability'
+      ? require('../../../icons/reachability.svg')
+      : null;
+
+  if (!href) return null;
+
+  // compat: href o xlink:href
+  svgAttr(img, { href });                 // modern
+  img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href); // legacy
+
+  return img;
+}

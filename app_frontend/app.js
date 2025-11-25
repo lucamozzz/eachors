@@ -1,18 +1,18 @@
 import bpenvModeler from 'bpenv-modeler';
 import 'bpenv-modeler/dist/style.css';
-import ChoreoModeler from './chor-js/lib/Modeler';
+import ChoreoModeler from './chor-js/lib/Modeler.js';
 import PropertiesPanelModule from 'bpmn-js-properties-panel';
 
 import Reporter from './lib/validator/Validator.js';
-import PropertiesProviderModule from './lib/properties-provider';
-import TokenAnimationModule from './chor-js/lib/features/token-animation';
-import CustomTokenAnimationControls from './chor-js/lib/features/token-animation/CustomTokenAnimationControls';
+import PropertiesProviderModule from './lib/properties-provider/index.js';
+import TokenAnimationModule from './chor-js/lib/features/token-animation/index.js';
+// import CustomTokenAnimationControls from './chor-js/lib/features/token-animation/CustomTokenAnimationControls';
 
 import xml from './diagrams/pizzaDelivery.bpmn';
 import blankXml from './diagrams/newDiagram.bpmn';
 import messageTypeModdle from './chor-js/extension.json';
-import studentData from './chor-js/student.json';
-import { addDeployButtonToCanvas } from './deploy-ui.js'; // un modulo nel frontend che chiama fetch
+// import studentData from './chor-js/student.json';
+// import { addDeployButtonToCanvas } from './deploy-ui.js'; // un modulo nel frontend che chiama fetch
 
 
 
@@ -45,8 +45,8 @@ const modeler = new ChoreoModeler({
     bindTo: document
   },
   moddleExtensions: {
-msg: messageTypeModdle
-}
+    msg: messageTypeModdle
+  }
 });
 
 
@@ -55,15 +55,15 @@ const eventBus = modeler.get('eventBus');
 
 
 eventBus.on('selection.changed', function(event) {
-  const newlySelected = event.newSelection && event.newSelection[0];
-  if (newlySelected && newlySelected.type === 'bpmn:Message') {
-    // Il pannello delle proprietà si aggiorna già da solo su nuova selezione,
-    // ma qui puoi forzare tab oppure mostrare il pannello se serve
-    const propertiesPanelElement = document.getElementById('properties-panel');
-    if (propertiesPanelElement) {
-      propertiesPanelElement.classList.remove('hidden');
-    }
-  }
+  const newlySelected = event.newSelection && event.newSelection[0];
+  if (newlySelected && newlySelected.type === 'bpmn:Message') {
+    // Il pannello delle proprietà si aggiorna già da solo su nuova selezione,
+    // ma qui puoi forzare tab oppure mostrare il pannello se serve
+    const propertiesPanelElement = document.getElementById('properties-panel');
+    if (propertiesPanelElement) {
+      propertiesPanelElement.classList.remove('hidden');
+    }
+  }
 });
 
 const REFRESH_INTERVAL_MS = 2000;
@@ -210,10 +210,10 @@ document.addEventListener('DOMContentLoaded', () => {
       reporter.validateDiagram();
     }
 
-// Chiama la funzione quando il modello è stato caricato/renderizzato
-modeler.on('import.render.complete', () => {
-  aggiornaSelectElementIds();
-});
+    // Chiama la funzione quando il modello è stato caricato/renderizzato
+    // modeler.on('import.render.complete', () => {
+    //   aggiornaSelectElementIds();
+    // });
 
   });
 });
@@ -222,29 +222,29 @@ modeler.on('import.render.complete', () => {
 window.bpmnjs = modeler;
 
 // Inizializza i controlli di animazione
-let animationControls;
-modeler.on('import.render.complete', () => {
-  if (isValidating) {
-    reporter.validateDiagram();
-  }
-  
-  // Inizializza i controlli di animazione dopo il rendering
-  if (animationControls) {
-    animationControls.destroy();
-  }
-  
-  try {
-    const tokenAnimation = modeler.get('customTokenAnimation');
-    animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'), modeler);
-  } catch (error) {
-    console.warn('Token animation not available:', error);
-  }
-});
+// let animationControls;
+// modeler.on('import.render.complete', () => {
+//   if (isValidating) {
+//     reporter.validateDiagram();
+//   }
+
+//   // Inizializza i controlli di animazione dopo il rendering
+//   if (animationControls) {
+//     animationControls.destroy();
+//   }
+
+//   try {
+//     const tokenAnimation = modeler.get('customTokenAnimation');
+//     animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'), modeler);
+//   } catch (error) {
+//     console.warn('Token animation not available:', error);
+//   }
+// });
 
 window.addEventListener('beforeunload', function(e) {
   if (isDirty) {
     // see https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
-    e.preventDefault( );
+    e.preventDefault();
     e.returnValue = '';
   }
 });
@@ -287,95 +287,95 @@ resizer.addEventListener('mousedown', (e) => {
 
 
 // Funzione per aggiornare la select degli elementi BPMN (messaggi, gateway, eventi, ecc.)
-function aggiornaSelectElementIds() {
-  const select = document.getElementById('elementId');
-  const elementRegistry = modeler.get('elementRegistry');
-  select.innerHTML = '';
+// function aggiornaSelectElementIds() {
+//   const select = document.getElementById('elementId');
+//   const elementRegistry = modeler.get('elementRegistry');
+//   select.innerHTML = '';
 
-  elementRegistry.getAll().forEach(element => {
-    // Considera solo elementi disegnati come SHAPE (non connection)
-    const isShape = !!element.x && !!element.y;
-    // Verifica che l'elemento abbia un nodo grafico SVG (quindi è visibile)
-    const hasGraphics = !!elementRegistry.getGraphics(element);
+//   elementRegistry.getAll().forEach(element => {
+//     // Considera solo elementi disegnati come SHAPE (non connection)
+//     const isShape = !!element.x && !!element.y;
+//     // Verifica che l'elemento abbia un nodo grafico SVG (quindi è visibile)
+//     const hasGraphics = !!elementRegistry.getGraphics(element);
 
-    if (
-      isShape &&
-      hasGraphics &&
-      (
-        element.type === 'bpmn:Message' ||
-        element.type === 'bpmn:ExclusiveGateway' ||
-        element.type === 'bpmn:ParallelGateway' ||
-        element.type === 'bpmn:InclusiveGateway' ||
-        element.type === 'bpmn:EventBasedGateway' ||
-        element.type === 'bpmn:StartEvent' ||
-        element.type === 'bpmn:EndEvent'
-      )
-    ) {
-      const option = document.createElement('option');
-      option.value = element.id;
-      option.text = element.businessObject.name || element.id;
-      select.appendChild(option);
-    }
-  });
-}
+//     if (
+//       isShape &&
+//       hasGraphics &&
+//       (
+//         element.type === 'bpmn:Message' ||
+//         element.type === 'bpmn:ExclusiveGateway' ||
+//         element.type === 'bpmn:ParallelGateway' ||
+//         element.type === 'bpmn:InclusiveGateway' ||
+//         element.type === 'bpmn:EventBasedGateway' ||
+//         element.type === 'bpmn:StartEvent' ||
+//         element.type === 'bpmn:EndEvent'
+//       )
+//     ) {
+//       const option = document.createElement('option');
+//       option.value = element.id;
+//       option.text = element.businessObject.name || element.id;
+//       select.appendChild(option);
+//     }
+//   });
+// }
 
 // Funzione per aggiornare la select dei sequence flow (edge)
-function aggiornaSelectEdgeIds() {
-  const select = document.getElementById('edgeId');
-  if (!select) return;
-  const elementRegistry = window.bpmnjs.get('elementRegistry');
-  select.innerHTML = '';
-  elementRegistry.getAll().forEach(element => {
-    if (element.type === 'bpmn:SequenceFlow') {
-      const option = document.createElement('option');
-      option.value = element.id;
-      option.text = element.businessObject.name || element.id;
-      select.appendChild(option);
-    }
-  });
-}
+// function aggiornaSelectEdgeIds() {
+//   const select = document.getElementById('edgeId');
+//   if (!select) return;
+//   const elementRegistry = window.bpmnjs.get('elementRegistry');
+//   select.innerHTML = '';
+//   elementRegistry.getAll().forEach(element => {
+//     if (element.type === 'bpmn:SequenceFlow') {
+//       const option = document.createElement('option');
+//       option.value = element.id;
+//       option.text = element.businessObject.name || element.id;
+//       select.appendChild(option);
+//     }
+//   });
+// }
 
 // Listener che aggiorna le select e inizializza le API dopo il caricamento del diagramma
-modeler.on('import.render.complete', () => {
-  aggiornaSelectElementIds();
-  aggiornaSelectEdgeIds();
-  if (isValidating) {
-    reporter.validateDiagram();
-  }
-  try {
-    // Ottieni l'istanza dell'animazione token e inizializza i controlli
-    const tokenAnimation = modeler.get('customTokenAnimation');
-    animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
-    // Collega il servizio overlays all'animazione token
-    const overlays = modeler.get('overlays');
-    tokenAnimation._overlays = overlays;
-    // Espone le API di colorazione e animazione edge globalmente (per l'HTML)
-    window.colorElement = (elementId, color) => tokenAnimation.colorElement(elementId, color);
-    window.animateEdge = tokenAnimation.animateEdge.bind(tokenAnimation);
-  } catch (error) {
-    console.warn('Token animation not available:', error);
-  }
-});
+// modeler.on('import.render.complete', () => {
+//   aggiornaSelectElementIds();
+//   aggiornaSelectEdgeIds();
+//   if (isValidating) {
+//     reporter.validateDiagram();
+//   }
+//   try {
+//     // Ottieni l'istanza dell'animazione token e inizializza i controlli
+//     const tokenAnimation = modeler.get('customTokenAnimation');
+//     animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
+//     // Collega il servizio overlays all'animazione token
+//     const overlays = modeler.get('overlays');
+//     tokenAnimation._overlays = overlays;
+//     // Espone le API di colorazione e animazione edge globalmente (per l'HTML)
+//     window.colorElement = (elementId, color) => tokenAnimation.colorElement(elementId, color);
+//     window.animateEdge = tokenAnimation.animateEdge.bind(tokenAnimation);
+//   } catch (error) {
+//     console.warn('Token animation not available:', error);
+//   }
+// });
 
 // Listener che aggiorna le select e valida il diagramma dopo ogni modifica
-modeler.on('commandStack.changed', () => {
-  aggiornaSelectElementIds();
-  aggiornaSelectEdgeIds();
-  if (isValidating) {
-    reporter.validateDiagram();
-  }
-  isDirty = true;
-});
-addDeployButtonToCanvas(modeler);
+// modeler.on('commandStack.changed', () => {
+//   aggiornaSelectElementIds();
+//   aggiornaSelectEdgeIds();
+//   if (isValidating) {
+//     reporter.validateDiagram();
+//   }
+//   isDirty = true;
+// });
+// addDeployButtonToCanvas(modeler);
 // Renderizza il modellatore BPEnv nella colonna di destra
 bpenvModeler.render('bpenv-container');
-setTimeout(function() {
-  if (typeof window.bpenvModeler?.getPlaces === 'function') {
-    console.log("DEBUG PLACES FROM WINDOW after rendering:", window.bpenvModeler.getPlaces());
-  } else {
-    console.error("bpenvModeler.getPlaces non trovata!");
-  }
-}, 1000);
+// setTimeout(function() {
+//   if (typeof window.bpenvModeler?.getPlaces === 'function') {
+//     console.log("DEBUG PLACES FROM WINDOW after rendering:", window.bpenvModeler.getPlaces());
+//   } else {
+//     console.error("bpenvModeler.getPlaces non trovata!");
+//   }
+// }, 1000);
 
 // Carica e visualizza il diagramma BPMN di default all'avvio
 renderModel(xml);

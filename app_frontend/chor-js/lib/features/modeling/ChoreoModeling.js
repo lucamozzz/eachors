@@ -1,20 +1,20 @@
 import inherits from 'inherits';
 
-import BpmnModeling from 'bpmn-js/lib/features/modeling/Modeling';
+import BpmnModeling from 'bpmn-js/lib/features/modeling/Modeling.js';
 
-import SwapParticipantBandHandler from './cmd/SwapParticipantBandHandler';
-import CreateParticipantBandHandler from './cmd/CreateParticipantBandHandler';
-import ToggleMessageVisibilityHandler from './cmd/ToggleMessageVisibilityHandler';
-import AddMessageHandler from './cmd/AddMessageHandler';
-import UpdateMessageLabelHandler from '../label-editing/cmd/UpdateMessageLabelHandler';
-import ParticipantMultiplicityHandler from './cmd/ParticipantMultiplicityHandler';
-import ChangeParticipantBandHandler from './cmd/ChangeParticipantBandHandler';
-import SwapInitiatingParticipantHandler from './cmd/SwapInitiatingParticipantHandler';
-import ChoreoAppendShapeHandler from './cmd/ChoreoAppendShapeHandler';
-import LinkCallChoreoHandler from './cmd/LinkCallChoreoHandler';
-import LinkCallChoreoParticipantHandler from './cmd/LinkCallChoreoParticipantHandler';
+import SwapParticipantBandHandler from './cmd/SwapParticipantBandHandler.js';
+import CreateParticipantBandHandler from './cmd/CreateParticipantBandHandler.js';
+import ToggleMessageVisibilityHandler from './cmd/ToggleMessageVisibilityHandler.js';
+import AddMessageHandler from './cmd/AddMessageHandler.js';
+import UpdateMessageLabelHandler from '../label-editing/cmd/UpdateMessageLabelHandler.js';
+import ParticipantMultiplicityHandler from './cmd/ParticipantMultiplicityHandler.js';
+import ChangeParticipantBandHandler from './cmd/ChangeParticipantBandHandler.js';
+import SwapInitiatingParticipantHandler from './cmd/SwapInitiatingParticipantHandler.js';
+import ChoreoAppendShapeHandler from './cmd/ChoreoAppendShapeHandler.js';
+import LinkCallChoreoHandler from './cmd/LinkCallChoreoHandler.js';
+import LinkCallChoreoParticipantHandler from './cmd/LinkCallChoreoParticipantHandler.js';
 import ChoreoParticipantHandler from './cmd/ChoreoParticipantHandler.js';
-import ChoreoSetColorHandler from './cmd/ChoreoSetColorHandler';
+import ChoreoSetColorHandler from './cmd/ChoreoSetColorHandler.js';
 
 /**
  * Component that manages choreography specific modeling moves that attach to the
