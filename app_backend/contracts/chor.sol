@@ -28,7 +28,7 @@ contract Chor {
         uint peopleRescuedA;
         bytes32 rescueSiteG;
         bytes32 rescueSitePathG;
-        bytes32[] traversedRescueSitePathG;
+        bytes32[] traversedRescueSitePath;
         string typeOfInjuriesG;
         uint peopleRescuedG;
         string emergencyType;
@@ -39,8 +39,8 @@ contract Chor {
         string fireStatus;
         string fireStatusNR;
         string fireStatusPR;
-        string damageDescriptionPR;
-        bytes32[] riskLocationPR;
+        string damageDescription;
+        bytes32[] riskLocations;
         bytes32 fireSite;
         bytes32 fireSitePath;
         bytes32[] traversedFireSitePath;
@@ -49,12 +49,11 @@ contract Chor {
     Element[] elements;
     StateMemory currentMemory;
     string[] elementsID = [
-        "patientLocationA",
-        "patientRescuedA",
-        "patientReportA",
-        "patientLocationG",
-        "patientRescuedG",
-        "patientReportG",
+        "rescueLocationA",
+        "rescueReportA",
+        "rescueLocationG",
+        "peopleRescued",
+        "rescueReportG",
         "emergency",
         "emergencyOn",
         "emergencyOff",
@@ -91,18 +90,18 @@ contract Chor {
 
         environmentContract = Environment(environmentAddress);
 
-        roles["Citizen"] = payable(0x6000832cC39bDe7bdE8A0f8558c1034897512a87);
+        roles["Citizen"] = payable(0xdBC004826C17F7f8938271fA64c11338b50eebf6);
         roles["Operation Center"] = payable(
-            0x6000832cC39bDe7bdE8A0f8558c1034897512a87
+            0xdBC004826C17F7f8938271fA64c11338b50eebf6
         );
         roles["Firefighters Team"] = payable(
-            0x6000832cC39bDe7bdE8A0f8558c1034897512a87
+            0xdBC004826C17F7f8938271fA64c11338b50eebf6
         );
         roles["Ambulance"] = payable(
-            0x6000832cC39bDe7bdE8A0f8558c1034897512a87
+            0xdBC004826C17F7f8938271fA64c11338b50eebf6
         );
         roles["Air Ambulance"] = payable(
-            0x6000832cC39bDe7bdE8A0f8558c1034897512a87
+            0xdBC004826C17F7f8938271fA64c11338b50eebf6
         );
 
         enable("StartEvent_1dyqrhu");
@@ -137,69 +136,69 @@ contract Chor {
         return (elements, currentMemory);
     }
 
-    function patientLocationA(
+    function rescueLocationA(
         bytes32 rescueSiteA
     ) public checkMand(roleList[1]) {
-        require(elements[position["patientLocationA"]].status == State.ENABLED);
+        require(elements[position["rescueLocationA"]].status == State.ENABLED);
         currentMemory.rescueSiteA = rescueSiteA;
-        done("patientLocationA");
-        enable("patientReportA");
+        done("rescueLocationA");
+        enable("rescueReportA");
     }
 
-    function patientReportA(
+    function rescueReportA(
         string memory typeOfInjuriesA,
         uint peopleRescuedA
     ) public checkMand(roleList[4]) {
-        require(elements[position["patientReportA"]].status == State.ENABLED);
+        require(elements[position["rescueReportA"]].status == State.ENABLED);
         require(
             environmentContract.getAttribute(
-                currentMemory.emergencyLocation,
-                "fireAlarm"
+                currentMemory.fireSite,
+                "fire"
             ) == bytes32("false")
         );
 
         currentMemory.typeOfInjuriesA = typeOfInjuriesA;
         currentMemory.peopleRescuedA = peopleRescuedA;
-        done("patientReportA");
+        done("rescueReportA");
         enable("ExclusiveGateway_0bep7fg");
         ExclusiveGateway_0bep7fg();
     }
 
-    function patientLocationG(
+    function rescueLocationG(
         bytes32 rescueSiteG,
         bytes32 rescueSitePathG
     ) public checkMand(roleList[1]) {
-        require(elements[position["patientLocationG"]].status == State.ENABLED);
+        require(elements[position["rescueLocationG"]].status == State.ENABLED);
         currentMemory.rescueSiteG = rescueSiteG;
         currentMemory.rescueSitePathG = rescueSitePathG;
-        done("patientLocationG");
-        enable("patientRescuedG");
+        done("rescueLocationG");
+        enable("peopleRescued");
     }
 
-    function patientRescuedG(
-        bytes32[] memory traversedRescueSitePathG
+    function peopleRescued(
+        bytes32[] memory traversedRescueSitePath
     ) public checkMand(roleList[3]) {
-        require(elements[position["patientRescuedG"]].status == State.ENABLED);
-        currentMemory.traversedRescueSitePathG = traversedRescueSitePathG;
-        done("patientRescuedG");
-        enable("patientReportG");
+        require(elements[position["peopleRescued"]].status == State.ENABLED);
+        currentMemory.traversedRescueSitePath = traversedRescueSitePath;
+        done("peopleRescued");
+        enable("rescueReportG");
     }
 
-    function patientReportG(
+    function rescueReportG(
         string memory typeOfInjuriesG,
         uint peopleRescuedG
     ) public checkMand(roleList[3]) {
-        require(elements[position["patientReportG"]].status == State.ENABLED);
+        require(elements[position["rescueReportG"]].status == State.ENABLED);
         require(
             environmentContract.getAttribute(
-                currentMemory.emergencyLocation,
-                "fireAlarm"
+                currentMemory.fireSite,
+                "fire"
             ) == bytes32("false")
         );
 
         currentMemory.typeOfInjuriesG = typeOfInjuriesG;
         currentMemory.peopleRescuedG = peopleRescuedG;
-        done("patientReportG");
+        done("rescueReportG");
         enable("ExclusiveGateway_0bep7fg");
         ExclusiveGateway_0bep7fg();
     }
@@ -272,8 +271,8 @@ contract Chor {
 
     function fireReportPR(
         string memory fireStatusPR,
-        string memory damageDescriptionPR,
-        bytes32[] memory riskLocationPR
+        string memory damageDescription,
+        bytes32[] memory riskLocations
     ) public checkMand(roleList[2]) {
         require(elements[position["fireReportPR"]].status == State.ENABLED);
         require(
@@ -282,9 +281,10 @@ contract Chor {
         );
 
         currentMemory.fireStatusPR = fireStatusPR;
-        currentMemory.damageDescriptionPR = damageDescriptionPR;
-        currentMemory.riskLocationPR = riskLocationPR;
+        currentMemory.damageDescription = damageDescription;
+        currentMemory.riskLocations = riskLocations;
         done("fireReportPR");
+        disable("fireReportNR");
         enable("EndEvent_0784xir");
         EndEvent_0784xir();
     }
@@ -295,6 +295,7 @@ contract Chor {
         require(elements[position["fireReportNR"]].status == State.ENABLED);
         currentMemory.fireStatusNR = fireStatusNR;
         done("fireReportNR");
+        disable("fireReportPR");
         enable("EndEvent_0pl0vsb");
         EndEvent_0pl0vsb();
     }
@@ -371,10 +372,10 @@ contract Chor {
         done("ExclusiveGateway_0seo2yk");
 
         if (environmentContract.isReachable("ExclusiveGateway_0seo2yk") == true)
-            enable("patientLocationG");
+            enable("rescueLocationG");
         else if (
             environmentContract.isReachable("ExclusiveGateway_0seo2yk") == false
-        ) enable("patientLocationA");
+        ) enable("rescueLocationA");
     }
 
     function StartEvent_1dyqrhu() private {

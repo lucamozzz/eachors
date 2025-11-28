@@ -8,7 +8,7 @@ import {
 import { is } from "bpmn-js/lib/util/ModelUtil";
 import './CustomTokenAnimation.css';
 
-const TOKEN_SIZE = 20;
+const TOKEN_SIZE = 0;
 const ANIMATION_DURATION_BASE = 2000;
 
 export default function CustomTokenAnimation(
@@ -21,14 +21,14 @@ export default function CustomTokenAnimation(
   this._elementRegistry = elementRegistry;
 
   this._isPlaying = false;
-  this._speed = 1;
+  this._speed = 10;
 
   this._tokenAnimations = new Map();
   this._gatewayJoinState = new Map();
   this._tokenStates = new Map();
 
   this._activePopup = null;
-  
+
   // 🔑 NUOVO: gestione token individuali su choreography
   this._tokenChoreographyQueue = []; // Array di { token, task, messageShapes, messageIndex }
   this._isProcessingPopup = false;
@@ -44,7 +44,7 @@ CustomTokenAnimation.prototype._bindEvents = function () {
    CONTROLLO VELOCITÀ
    ------------------------- */
 
-CustomTokenAnimation.prototype.setSpeed = function(speed) {
+CustomTokenAnimation.prototype.setSpeed = function (speed) {
   if (speed <= 0) {
     console.warn("Speed deve essere maggiore di 0");
     return;
@@ -53,7 +53,7 @@ CustomTokenAnimation.prototype.setSpeed = function(speed) {
   console.log("Velocità impostata a:", speed);
 };
 
-CustomTokenAnimation.prototype.getSpeed = function() {
+CustomTokenAnimation.prototype.getSpeed = function () {
   return this._speed;
 };
 
@@ -119,7 +119,7 @@ CustomTokenAnimation.prototype.reset = function () {
   this._tokenAnimations.clear();
   if (this._tokenStates) this._tokenStates.clear();
   this._gatewayJoinState.clear();
-  
+
   // 🔑 NUOVO: pulisci coda choreography
   this._tokenChoreographyQueue = [];
   this._isProcessingPopup = false;
@@ -132,7 +132,7 @@ CustomTokenAnimation.prototype.reset = function () {
   });
 
   if (this._activePopup) {
-    try { document.body.removeChild(this._activePopup); } catch (e) {}
+    try { document.body.removeChild(this._activePopup); } catch (e) { }
     this._activePopup = null;
   }
 
@@ -171,10 +171,10 @@ CustomTokenAnimation.prototype._removeToken = function (token) {
   }
   this._tokenAnimations.delete(token);
   this._tokenStates.delete(token);
-  
+
   // 🔑 NUOVO: rimuovi token anche dalla coda choreography
   this._tokenChoreographyQueue = this._tokenChoreographyQueue.filter(item => item.token !== token);
-  
+
   try {
     svgRemove(token);
   } catch (e) {
@@ -229,10 +229,10 @@ CustomTokenAnimation.prototype._animateTokenAlongFlow = function (
       const y = startPoint.y + (endPoint.y - startPoint.y) * segmentRatio;
 
       svgAttr(
-  token,
-  "transform",
-  `translate(${x}, ${y})`
-);
+        token,
+        "transform",
+        `translate(${x}, ${y})`
+      );
 
 
       this._tokenStates.set(token, {
@@ -306,7 +306,7 @@ CustomTokenAnimation.prototype._handleNextElement = function (nextElement, token
       return;
     }
   }
- // === MENU MANUALE SU EVENT-BASED-GATEWAY ===
+  // === MENU MANUALE SU EVENT-BASED-GATEWAY ===
   if (is(nextElement, "bpmn:EventBasedGateway")) {
     if (nextElement.outgoing && nextElement.outgoing.length > 0) {
       this._showEventBasedGatewayPopup(nextElement, token);
@@ -440,10 +440,10 @@ CustomTokenAnimation.prototype._handleChoreographyTask = function (task, token) 
   }
 };
 
-CustomTokenAnimation.prototype._showEventBasedGatewayPopup = function(gateway, token) {
+CustomTokenAnimation.prototype._showEventBasedGatewayPopup = function (gateway, token) {
   // Se è già presente un popup, chiudi
   if (this._activePopup) {
-    try { document.body.removeChild(this._activePopup); } catch (e) {}
+    try { document.body.removeChild(this._activePopup); } catch (e) { }
     this._activePopup = null;
   }
 
@@ -482,7 +482,7 @@ CustomTokenAnimation.prototype._showEventBasedGatewayPopup = function(gateway, t
     if (chosenFlow) {
       // Rimuovi popup, continua il token su quel ramo
       if (this._activePopup) {
-        try { document.body.removeChild(this._activePopup); } catch (e) {}
+        try { document.body.removeChild(this._activePopup); } catch (e) { }
         this._activePopup = null;
       }
       this._animateTokenAlongFlow(chosenFlow, 0, token);
@@ -498,7 +498,7 @@ CustomTokenAnimation.prototype._showEventBasedGatewayPopup = function(gateway, t
   closeBtn.style.border = "none";
   closeBtn.style.cursor = "pointer";
   closeBtn.addEventListener("click", () => {
-    try { document.body.removeChild(popup); } catch (e) {}
+    try { document.body.removeChild(popup); } catch (e) { }
     this._activePopup = null;
     this._removeToken(token); // Se chiudi il popup perdi il token
   });
@@ -523,7 +523,7 @@ CustomTokenAnimation.prototype._showEventBasedGatewayPopup = function(gateway, t
 /**
  * 🔑 NUOVO: Processa i token uno alla volta dalla coda
  */
-CustomTokenAnimation.prototype._processNextTokenInQueue = function() {
+CustomTokenAnimation.prototype._processNextTokenInQueue = function () {
   if (this._tokenChoreographyQueue.length === 0) {
     this._isProcessingPopup = false;
     return;
@@ -542,12 +542,12 @@ CustomTokenAnimation.prototype._processNextTokenInQueue = function() {
 /**
  * 🔑 NUOVO: Processa i messaggi per un singolo token
  */
-CustomTokenAnimation.prototype._processTokenMessages = function(tokenData) {
+CustomTokenAnimation.prototype._processTokenMessages = function (tokenData) {
   if (tokenData.messageIndex >= tokenData.messageShapes.length) {
     // Finiti i messaggi per questo token: rimuovilo dalla coda e continua
     this._tokenChoreographyQueue.shift(); // rimuovi il primo elemento
     this._resumeToken(tokenData);
-    
+
     // Processa il prossimo token nella coda
     setTimeout(() => {
       this._processNextTokenInQueue();
@@ -556,26 +556,28 @@ CustomTokenAnimation.prototype._processTokenMessages = function(tokenData) {
   }
 
   const shape = tokenData.messageShapes[tokenData.messageIndex];
-  
+
   this._showMessagePopup(shape, () => {
     // OK -> verde
     this.colorElement(shape.id, "green");
     tokenData.messageIndex++;
     this._processTokenMessages(tokenData);
-  }, () => {
-    // NO/chiudi -> rosso
-    this.colorElement(shape.id, "red");
-    tokenData.messageIndex++;
-    this._processTokenMessages(tokenData);
-  });
+  }
+    // , () => {
+    //   // NO/chiudi -> rosso
+    //   this.colorElement(shape.id, "red");
+    //   tokenData.messageIndex++;
+    //   this._processTokenMessages(tokenData);
+    // }
+  );
 };
 
 /**
  * 🔑 NUOVO: Riprende un singolo token dopo aver completato i suoi popup
  */
-CustomTokenAnimation.prototype._resumeToken = function(tokenData) {
+CustomTokenAnimation.prototype._resumeToken = function (tokenData) {
   const { token, task } = tokenData;
-  
+
   if (!token || !token.parentNode) {
     return;
   }
@@ -585,7 +587,7 @@ CustomTokenAnimation.prototype._resumeToken = function(tokenData) {
     if (task.outgoing.length > 1) {
       // Per split, usa il primo outgoing per il token corrente
       this._animateTokenAlongFlow(task.outgoing[0], 0, token);
-      
+
       // Crea nuovi token per gli altri outgoing
       for (let i = 1; i < task.outgoing.length; i++) {
         const newToken = this._createTokenGfx();
@@ -602,7 +604,7 @@ CustomTokenAnimation.prototype._resumeToken = function(tokenData) {
 /**
  * Ferma solo un token specifico
  */
-CustomTokenAnimation.prototype._pauseSpecificToken = function(token) {
+CustomTokenAnimation.prototype._pauseSpecificToken = function (token) {
   const frameId = this._tokenAnimations.get(token);
   if (frameId) {
     cancelAnimationFrame(frameId);
@@ -611,9 +613,10 @@ CustomTokenAnimation.prototype._pauseSpecificToken = function(token) {
 };
 
 /* Mostra popup (invariato) */
-CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onConfirm, onReject) {
+// CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onConfirm, onReject) {
+CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onConfirm) {
   if (this._activePopup) {
-    try { document.body.removeChild(this._activePopup); } catch (e) {}
+    try { document.body.removeChild(this._activePopup); } catch (e) { }
     this._activePopup = null;
   }
 
@@ -625,9 +628,50 @@ CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onCon
   header.style.justifyContent = "space-between";
   header.style.alignItems = "center";
 
+  
+  // const textBox = document.createElement("input");
+  // textBox.type = "text";
+  // textBox.placeholder = "Message payload";
+  // textBox.style.marginLeft = "10px";
+  // textBox.style.flexGrow = "1";
+  
   const title = document.createElement("div");
   title.innerText = messageShape.businessObject.name || "Messaggio";
   title.style.fontWeight = "700";
+  
+  const signature = title.innerText; // "function(type param1, type param2, type param3)"
+
+  // Estrai la parte tra parentesi
+  const paramsString = signature.match(/\((.*)\)/)?.[1]; // "type param1, type param2, type param3"
+
+  // Dividi in singoli parametri
+  const params = paramsString ? paramsString.split(',').map(p => p.trim()) : [];
+
+  // Container dove mettere label + input
+  const container = document.createElement("div");
+  container.style.display = "flex";
+  container.style.flexDirection = "column";
+  container.style.gap = "5px";
+
+  params.forEach(param => {
+    // Estrai solo il nome del parametro
+    const paramName = param.split(' ').pop(); // "param1", "param2", ecc.
+
+    // Crea label
+    const label = document.createElement("label");
+    label.innerText = paramName;
+
+    // Crea textbox
+    const input = document.createElement("input");
+    input.type = "text";
+    input.placeholder = paramName;
+
+    container.appendChild(label);
+    container.appendChild(input);
+  });
+
+  // Infine aggiungi container al DOM
+  header.appendChild(container); // o dove vuoi inserirlo
 
   const closeBtn = document.createElement("button");
   closeBtn.innerText = "✕";
@@ -635,7 +679,8 @@ CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onCon
   closeBtn.style.background = "transparent";
   closeBtn.style.cursor = "pointer";
 
-  header.appendChild(title);
+  // header.appendChild(title);
+  // header.appendChild(textBox);
   header.appendChild(closeBtn);
   popup.appendChild(header);
 
@@ -652,10 +697,7 @@ CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onCon
   actions.style.gap = "8px";
   const okBtn = document.createElement("button");
   okBtn.innerText = "OK";
-  const noBtn = document.createElement("button");
-  noBtn.innerText = "NO";
   actions.appendChild(okBtn);
-  actions.appendChild(noBtn);
   popup.appendChild(actions);
 
   document.body.appendChild(popup);
@@ -663,20 +705,20 @@ CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onCon
 
   const cleanup = () => {
     if (this._activePopup) {
-      try { document.body.removeChild(this._activePopup); } catch (e) {}
+      try { document.body.removeChild(this._activePopup); } catch (e) { }
       this._activePopup = null;
     }
   };
 
   closeBtn.addEventListener("click", () => {
     cleanup();
-    if (onReject) onReject();
+    // if (onReject) onReject();
   });
 
-  noBtn.addEventListener("click", () => {
-    cleanup();
-    if (onReject) onReject();
-  });
+  // noBtn.addEventListener("click", () => {
+  //   cleanup();
+  //   if (onReject) onReject();
+  // });
 
   okBtn.addEventListener("click", () => {
     cleanup();
@@ -688,7 +730,7 @@ CustomTokenAnimation.prototype._showMessagePopup = function (messageShape, onCon
    COLORAZIONE E METODI HELPER (invariati)
    ------------------------- */
 
-CustomTokenAnimation.prototype.colorElement = function(elementId, color) {
+CustomTokenAnimation.prototype.colorElement = function (elementId, color) {
   this._canvas.removeMarker(elementId, 'highlight-yellow');
   this._canvas.removeMarker(elementId, 'highlight-green');
   this._canvas.removeMarker(elementId, 'highlight-red');
@@ -706,7 +748,7 @@ CustomTokenAnimation.prototype._animateTokenAlongFlowWithToken = function (seque
   return this._animateTokenAlongFlow(sequenceFlow, startWaypointIndex, token);
 };
 
-CustomTokenAnimation.prototype.animateEdge = function(edgeId) {
+CustomTokenAnimation.prototype.animateEdge = function (edgeId) {
   this.reset();
 
   const edge = this._elementRegistry.get(edgeId);

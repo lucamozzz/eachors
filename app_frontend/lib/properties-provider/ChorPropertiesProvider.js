@@ -61,23 +61,23 @@ export default function ChorPropertiesProvider(injector, bpmnFactory) {
       return tabs;
     }
     
-    if (is(element, 'bpmn:Participant')) {
-      detailsGroup.entries.push(entryFactory.selectBox({
-        id: 'participant-StartingPlace',
-        label: 'Starting Place',
-        modelProperty: 'participantPlace',
-        selectOptions: getDynamicPlaces(),
-        get: function(el) {
-          const bo = el.businessObject;
-          return { participantPlace: (bo && bo.get) ? (bo.get('participantPlace') || '') : '' };
-        },
-        set: function(el, values) {
-          const bo = el.businessObject;
-          return cmdHelper.updateBusinessObject(el, bo, { participantPlace: values.participantPlace || '' });
-        }
-      }));
-      return tabs;
-    }
+    // if (is(element, 'bpmn:Participant')) {
+    //   detailsGroup.entries.push(entryFactory.selectBox({
+    //     id: 'participant-StartingPlace',
+    //     label: 'Starting Place',
+    //     modelProperty: 'participantPlace',
+    //     selectOptions: getDynamicPlaces(),
+    //     get: function(el) {
+    //       const bo = el.businessObject;
+    //       return { participantPlace: (bo && bo.get) ? (bo.get('participantPlace') || '') : '' };
+    //     },
+    //     set: function(el, values) {
+    //       const bo = el.businessObject;
+    //       return cmdHelper.updateBusinessObject(el, bo, { participantPlace: values.participantPlace || '' });
+    //     }
+    //   }));
+    //   return tabs;
+    // }
 
     // Aggiungi le proprietà Camunda per conditional events
     conditionalProps(detailsGroup, element, bpmnFactory, e => e);

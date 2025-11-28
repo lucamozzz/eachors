@@ -69,7 +69,10 @@
     <div class="divider"></div>
     <button id="js-validate" class="icon-bug" title="Check diagram for problems"></button>
     <div class="divider"></div>
-    <button id="js-deploy" class="icon-export" title="Deploy smart contract"></button>
+    <button id="js-deploy" title="Deploy smart contract" style="display: flex; align-items: center; gap: 8px;">
+      <img id="deploy-icon" src="./icons/solidity.svg" alt="Solidity Icon" style="display: block; margin-left: 7px; width: 24px; height: 24px;">
+      <img id="deploy-spinner" src="./icons/loading.svg" alt="Solidity Icon" style="display: none; margin-left: 7px; width: 24px; height: 24px;">
+    </button>
   </div>
 
   <input id="file-input" name="name" type="file" accept=".bpmn, .xml" style="display: none;" />

@@ -9,6 +9,7 @@
       "extends": [ "bpmn:Message" ],
       "properties": [
         { "name": "messageType", "isAttr": true, "type": "String" },
+        { "name": "messagePayload", "isAttr": true, "type": "String" },
         { "name": "messageDestination", "isAttr": true, "type": "String" },
         { "name": "guard", "isAttr": true, "type": "String" },
         { "name": "assignments", "type": "Assignment", "isMany": true, "xml": { "serialize": "element" } }

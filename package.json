@@ -6,7 +6,8 @@
   "scripts": {
     "build": "parcel build app_frontend/index.html -d build --public-url ./",
     "dev": "parcel app_frontend/index.html -p 9013",
-    "backend": "cd app_backend && node server.js"
+    "backend": "cd app_backend && node server.js",
+    "update_env": "curl -X POST http://localhost:3000/env/update "
   },
   "keywords": [
     "choreography-modeler"
@@ -41,20 +42,21 @@
     "parcel-plugin-stringify-anything": "^1.2.0"
   },
   "dependencies": {
+    "app": "^0.1.0",
     "body-parser": "^2.2.0",
     "bpenv-modeler": "^0.0.20",
     "bpmn-js-properties-panel": "^0.35.0",
     "bpmn-moddle": "^9.0.4",
     "chor-js": "^0.7.1",
     "cors": "^2.8.5",
+    "deploy.js": "^0.0.4",
     "ethers": "^6.15.0",
     "express": "^5.1.0",
-    "hardhat": "^3.0.15",
     "inherits": "^2.0.4",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "solc": "^0.8.0",
-    "web3": "^4.16.0",
+    "xml2js": "^0.6.2",
     "xmldom": "^0.6.0"
   }
 }

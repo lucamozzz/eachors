@@ -2,29 +2,26 @@ import bpenvModeler from 'bpenv-modeler';
 import 'bpenv-modeler/dist/style.css';
 import ChoreoModeler from './chor-js/lib/Modeler.js';
 import PropertiesPanelModule from 'bpmn-js-properties-panel';
-
 import Reporter from './lib/validator/Validator.js';
 import PropertiesProviderModule from './lib/properties-provider/index.js';
-import TokenAnimationModule from './chor-js/lib/features/token-animation/index.js';
 // import CustomTokenAnimationControls from './chor-js/lib/features/token-animation/CustomTokenAnimationControls';
-
-import xml from './diagrams/pizzaDelivery.bpmn';
-import blankXml from './diagrams/newDiagram.bpmn';
+import xml from './diagrams/chor.bpmn';
+import env from './diagrams/env.json';
+import blank from './diagrams/blank.bpmn';
 import messageTypeModdle from './chor-js/extension.json';
+import TokenAnimationModule from './chor-js/lib/features/token-animation';
+import { ethers, encodeBytes32String, decodeBytes32String } from 'ethers';
 window.bpenvModeler = bpenvModeler;
 
 let lastFile;
 let isValidating = false;
 let isDirty = false;
 
-// create and configure a chor-js instance
 const modeler = new ChoreoModeler({
   container: '#canvas',
   propertiesPanel: {
     parent: '#properties-panel'
   },
-  // remove the properties' panel if you use the Viewer
-  // or NavigatedViewer modules of chor-js
   additionalModules: [
     PropertiesPanelModule,
     PropertiesProviderModule,
@@ -38,11 +35,7 @@ const modeler = new ChoreoModeler({
   }
 });
 
-
-
 const eventBus = modeler.get('eventBus');
-
-
 eventBus.on('selection.changed', function(event) {
   const newlySelected = event.newSelection && event.newSelection[0];
   if (newlySelected && newlySelected.type === 'bpmn:Message') {
@@ -55,28 +48,21 @@ eventBus.on('selection.changed', function(event) {
   }
 });
 
-const REFRESH_INTERVAL_MS = 2000;
-
 setInterval(() => {
   const selection = modeler.get('selection');
   const selected = selection.get();
 
   if (selected.length > 0) {
-    // Deseleziona e riesegui selezione per forzare refresh del pannello proprietà
     selection.deselect(selected);
     selection.select(selected);
   }
-}, REFRESH_INTERVAL_MS);
+}, 2000);
 
-
-
-// display the given model (XML representation)
 async function renderModel(newXml) {
   await modeler.importXML(newXml);
   isDirty = false;
 }
 
-// returns the file name of the diagram currently being displayed
 function diagramName() {
   if (lastFile) {
     return lastFile.name;
@@ -85,7 +71,6 @@ function diagramName() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // download diagram as XML
   const downloadLink = document.getElementById('js-download-diagram');
   downloadLink.addEventListener('click', async e => {
     const result = await modeler.saveXML({ format: true });
@@ -94,7 +79,6 @@ document.addEventListener('DOMContentLoaded', () => {
     isDirty = false;
   });
 
-  // download diagram as SVG
   const downloadSvgLink = document.getElementById('js-download-svg');
   downloadSvgLink.addEventListener('click', async e => {
     const result = await modeler.saveSVG();
@@ -102,7 +86,6 @@ document.addEventListener('DOMContentLoaded', () => {
     downloadSvgLink['download'] = diagramName() + '.svg';
   });
 
-  // open file dialog
   document.getElementById('js-open-file').addEventListener('click', e => {
     document.getElementById('file-input').click();
   });
@@ -130,7 +113,7 @@ document.addEventListener('DOMContentLoaded', () => {
   // create new diagram
   const newDiagram = document.getElementById('js-new-diagram');
   newDiagram.addEventListener('click', async e => {
-    await renderModel(blankXml);
+    await renderModel(blank);
     lastFile = false;
   });
 
@@ -199,11 +182,6 @@ document.addEventListener('DOMContentLoaded', () => {
       reporter.validateDiagram();
     }
 
-    // Chiama la funzione quando il modello è stato caricato/renderizzato
-    // modeler.on('import.render.complete', () => {
-    //   aggiornaSelectElementIds();
-    // });
-
   });
 });
 
@@ -211,24 +189,27 @@ document.addEventListener('DOMContentLoaded', () => {
 window.bpmnjs = modeler;
 
 // Inizializza i controlli di animazione
-// let animationControls;
-// modeler.on('import.render.complete', () => {
-//   if (isValidating) {
-//     reporter.validateDiagram();
-//   }
+let tokenAnimation;
+modeler.on('import.render.complete', () => {
+  // if (isValidating) {
+  //   reporter.validateDiagram();
+  // }
 
-//   // Inizializza i controlli di animazione dopo il rendering
-//   if (animationControls) {
-//     animationControls.destroy();
-//   }
+  // Inizializza i controlli di animazione dopo il rendering
+  // if (animationControls) {
+  //   animationControls.destroy();
+  // }
 
-//   try {
-//     const tokenAnimation = modeler.get('customTokenAnimation');
-//     animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'), modeler);
-//   } catch (error) {
-//     console.warn('Token animation not available:', error);
-//   }
-// });
+  if (env)
+    setTimeout(() => bpenvModeler.setModel(env), 500);
+
+  try {
+    tokenAnimation = modeler.get('customTokenAnimation');
+    // animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'), modeler);
+  } catch (error) {
+    console.warn('Token animation not available:', error);
+  }
+});
 
 window.addEventListener('beforeunload', function(e) {
   if (isDirty) {
@@ -271,111 +252,376 @@ resizer.addEventListener('mousedown', (e) => {
   document.addEventListener('mouseup', onMouseUp);
 });
 
+let chorContract;
+let envContract;
 document.getElementById('js-deploy').addEventListener('click', async () => {
-  const response = await fetch('http://localhost:3000/deploy', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({})
+  const icon = document.getElementById('deploy-icon');
+  icon.style.display = 'none';
+  const spinner = document.getElementById('deploy-spinner');
+  spinner.style.display = 'block';
+
+  try {
+    const res = await fetch('http://localhost:3000/deploy');
+    const data = await res.json();
+    if (!data.success) throw new Error(data.error);
+
+    const {
+      envAbi,
+      envBytecode,
+      chorAbi,
+      chorBytecode
+    } = data.payload;
+
+    await ethereum.request({ method: 'eth_requestAccounts' });
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+
+    let env = await bpenvModeler.getModel();
+    const EnvFactory = new ethers.ContractFactory(envAbi, envBytecode, signer);
+
+    const envC = await EnvFactory.deploy(
+      Array.from(new Set(env.physicalPlaces.flatMap(p => Object.keys(p.attributes))))
+        .map(ethers.encodeBytes32String),
+      env.physicalPlaces.map(p => ethers.encodeBytes32String(p.id)),
+      env.edges.map(e => ethers.encodeBytes32String(e.source.split('_')[1] + '_' + e.target.split('_')[1])),
+      env.logicalPlaces.map(lp => ethers.encodeBytes32String(lp.id)),
+      env.logicalPlaces.map(lp => lp.conditions.map(c => `${c.attribute} ${c.operator} ${c.value}`).join(` ${lp.operator} `)),
+      env.views.map(v => ethers.encodeBytes32String(v.id)),
+      env.views.map(v => v.logicalPlaces.map(ethers.encodeBytes32String)),
+      env.views.map(v => Object.keys(v.aggregations).map(ethers.encodeBytes32String)),
+      env.views.map(v => Object.values(v.aggregations).map(ethers.encodeBytes32String))
+    );
+
+    await envC.waitForDeployment();
+    console.log('Environment deployed at:', await envC.getAddress());
+    bpenvModeler.setEditable(false);
+
+    const ChorFactory = new ethers.ContractFactory(chorAbi, chorBytecode, signer);
+    const chorC = await ChorFactory.deploy(await envC.getAddress());
+    await chorC.waitForDeployment();
+    console.log('Chor deployed at:', await chorC.getAddress());
+
+    envContract = envC;
+    chorContract = chorC;
+
+    await fetch('http://localhost:3000/setContracts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        envAddress: await envC.getAddress(),
+        envAbi,
+        chorAddress: await chorC.getAddress(),
+        chorAbi
+      })
+    });
+
+    await fetchCurrentState();
+
+  } catch (err) {
+    console.error('Errore deploy:', err);
+    alert('Errore deploy: ' + err.message);
+  } finally {
+    icon.style.display = 'block';
+    spinner.style.display = 'none';
+  }
+});
+
+const StateEnum = ['DISABLED', 'ENABLED', 'DONE'];
+let currentState = [];
+async function fetchCurrentState() {
+  try {
+    const [elements] = await chorContract.getCurrentState();
+    currentState = elements.map(el => ({
+      ID: el.ID,
+      status: StateEnum[el.status]
+    }));
+    currentState.forEach(element => {
+      if (!element || !element.ID) return;
+      const skipPrefixes = [
+        'StartEvent',
+        'ParallelGateway',
+        'EventBasedGateway',
+        'ExclusiveGateway',
+        'EndEvent'
+      ];
+
+      // TODO: remove when translation is implemented
+      if (skipPrefixes.some(prefix => element.ID.startsWith(prefix))) return;
+
+      switch (element.status) {
+      case 'DONE':
+        tokenAnimation.colorElement(element.ID, 'green');
+        break;
+      case 'ENABLED':
+        tokenAnimation.colorElement(element.ID, 'yellow');
+        break;
+      case 'DISABLED':
+        tokenAnimation.colorElement(element.ID, 'red');
+        break;
+      }
+    });
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+setInterval(async () => {
+  if (envContract)
+    await refreshPhysicalPlaces();
+}, 5000);
+
+async function getPhysicalPlaces(contract) {
+  const [physicalPlaceKeys, attributeKeys, attributeValues] =
+    await contract.getPhysicalPlaces();
+
+  return physicalPlaceKeys.map((pk, i) => {
+    const attrs = {};
+
+    attributeKeys.forEach((key, j) => {
+      const raw = attributeValues[i][j];
+      if (raw !== ethers.encodeBytes32String(' ')) {
+        attrs[ethers.decodeBytes32String(key)] =
+          ethers.decodeBytes32String(raw);
+      }
+    });
+
+    return {
+      id: ethers.decodeBytes32String(pk),
+      name: ethers.decodeBytes32String(pk),
+      attributes: attrs
+    };
+  });
+}
+
+async function refreshPhysicalPlaces() {
+  try {
+    const updatedPlaces = await getPhysicalPlaces(envContract);
+    console.log('Blockchain places:', updatedPlaces);
+
+    let env = await bpenvModeler.getModel();
+
+    // Mappa attuale dei places
+    const oldPlaces = env.physicalPlaces;
+
+    // Merge dei nuovi valori
+    const merged = oldPlaces.map(old => {
+      const updated = updatedPlaces.find(p => p.id === old.id);
+      return updated ? { ...old, attributes: updated.attributes } : old;
+    });
+
+    env.physicalPlaces = merged;
+
+    bpenvModeler.setModel(env);
+
+  } catch (err) {
+    console.error('Errore nella richiesta:', err);
+  }
+}
+
+// async function getPhysicalPlaces(contract) {
+//   const [physicalPlaceKeys, attributeKeys, attributeValues] =
+//     await contract.getPhysicalPlaces();
+
+//   return physicalPlaceKeys.map((pk, i) => {
+//     const attrs = {};
+//     for (let j = 0; j < attributeKeys.length; j++) {
+//       const val = attributeValues[i][j];
+//       if (val !== encodeBytes32String(' ')) {
+//         attrs[decodeBytes32String(attributeKeys[j])] = decodeBytes32String(val);
+//       }
+//     }
+
+//     return {
+//       id: decodeBytes32String(pk),
+//       name: decodeBytes32String(pk),
+//       attributes: attrs,
+//     };
+//   });
+// }
+
+// async function refreshPhysicalPlaces() {
+//   try {
+//     const data = await getPhysicalPlaces(envContract);
+//     console.log(data);
+
+//     if (!data) {
+//       console.error('Errore aggiornamento physicalPlaces:', data.error);
+//       return;
+//     }
+
+//     const updatedPhysicalPlaces = data.map(oldPlace => {
+//       const updated = data.find(p => p.id === oldPlace.id);
+//       if (!updated) return oldPlace;
+//       return {
+//         ...oldPlace,
+//         attributes: { ...updated.attributes }
+//       };
+//     });
+
+//     let env = await bpenvModeler.getModel();
+
+//     env.physicalPlaces = updatedPhysicalPlaces;
+//     bpenvModeler.setModel({
+//       'physicalPlaces': env.physicalPlaces,
+//       'edges': env.edges,
+//       'logicalPlaces': env.logicalPlaces,
+//       'views': env.views
+//     });
+
+//   } catch (err) {
+//     console.error('Errore nella richiesta:', err);
+//   }
+// }
+
+async function callChorBackend(functionName, args = []) {
+  try {
+    const finalArgs = args.map(a => convertArg(a.type, a.value));
+    const data = await chorContract[functionName](...finalArgs);
+    console.log('Chor function result:', data);
+  } catch (err) {
+    console.error('Error calling Chor function:', err);
+    throw err;
+  }
+
+  function convertArg(type, value) {
+    switch (type) {
+    case 'string':
+      return value;
+
+    case 'bytes32':
+      return encodeBytes32String(value);
+
+    case 'bytes32[]':
+      return value.split(',').map(v => encodeBytes32String(v));
+
+    case 'uint':
+      return Number(value);
+
+    default:
+      throw new Error('Tipo non supportato: ' + type);
+    }
+  }
+}
+
+eventBus.on('element.click', function(e) {
+  const element = e.element;
+  if (element.type === 'bpmn:Message' || element.type === 'chor:Message') {
+    const el = currentState.find(s => s.ID === element.id);
+    if (!el) return;
+
+    if (el.status === 'ENABLED') {
+      showPopup(element, async (popupContainer) => {
+        const inputs = popupContainer.querySelectorAll('input');
+        const args = Array.from(inputs).map(input => ({
+          name: input.dataset.param,
+          type: input.dataset.type,
+          value: input.value
+        }));
+
+        console.log('Calling chor function', element.id, args);
+        await callChorBackend(element.id, args);
+        setTimeout(async () => {
+          console.log('Fetching state...');
+          await fetchCurrentState();
+        }, 5000);
+      });
+    }
+  }
+});
+
+
+function showPopup(messageShape, onConfirm) {
+  if (window._activePopup) {
+    try { document.body.removeChild(window._activePopup); } catch (e) {}
+    window._activePopup = null;
+  }
+
+  const popup = document.createElement('div');
+  popup.className = 'token-popup';
+  popup.style.position = 'fixed';
+  popup.style.top = '50%';
+  popup.style.left = '20%';
+  popup.style.transform = 'translate(-50%, -50%)';
+  popup.style.padding = '12px';
+  popup.style.backgroundColor = 'white';
+  popup.style.border = '1px solid #333';
+  popup.style.zIndex = 1000;
+  popup.style.minWidth = '250px';
+  popup.style.maxWidth = '500px';
+  popup.style.boxShadow = '0 4px 10px rgba(0,0,0,0.2)';
+
+  const header = document.createElement('div');
+  header.style.display = 'flex';
+  header.style.justifyContent = 'space-between';
+  header.style.alignItems = 'center';
+
+  const title = document.createElement('div');
+  title.innerText = messageShape.businessObject.name || 'Messaggio';
+  title.style.fontWeight = '700';
+  header.appendChild(title);
+
+  const closeBtn = document.createElement('button');
+  closeBtn.innerText = '✕';
+  closeBtn.style.border = 'none';
+  closeBtn.style.background = 'transparent';
+  closeBtn.style.cursor = 'pointer';
+  header.appendChild(closeBtn);
+
+  popup.appendChild(header);
+
+  const paramsContainer = document.createElement('div');
+  paramsContainer.style.display = 'flex';
+  paramsContainer.style.flexDirection = 'column';
+  paramsContainer.style.gap = '5px';
+  paramsContainer.style.marginTop = '10px';
+
+  const signature = title.innerText;
+  const paramsString = signature.match(/\((.*)\)/)?.[1];
+  const params = paramsString ? paramsString.split(',').map(p => p.trim()) : [];
+
+  params.forEach(param => {
+    const [paramType, paramName] = param.split(' ');
+    const label = document.createElement('label');
+    label.innerText = paramName;
+
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.placeholder = `${paramType}`;
+    input.dataset.param = paramName;
+    input.dataset.type = paramType;
+
+    paramsContainer.appendChild(label);
+    paramsContainer.appendChild(input);
   });
 
-  const result = await response.json();
-  console.log(result);
-});
+  popup.appendChild(paramsContainer);
+
+  const actions = document.createElement('div');
+  actions.style.display = 'flex';
+  actions.style.justifyContent = 'flex-end';
+  actions.style.marginTop = '12px';
+
+  const okBtn = document.createElement('button');
+  okBtn.innerText = 'OK';
+  actions.appendChild(okBtn);
+  popup.appendChild(actions);
+
+  document.body.appendChild(popup);
+  window._activePopup = popup;
+
+  const cleanup = () => {
+    if (window._activePopup) {
+      try { document.body.removeChild(window._activePopup); } catch (e) {}
+      window._activePopup = null;
+    }
+  };
+
+  closeBtn.addEventListener('click', cleanup);
+  okBtn.addEventListener('click', () => {
+    if (onConfirm) onConfirm(popup);
+    cleanup();
+  });
+}
 
 bpenvModeler.render('bpenv-container');
 renderModel(xml);
-
-
-// Funzione per aggiornare la select degli elementi BPMN (messaggi, gateway, eventi, ecc.)
-// function aggiornaSelectElementIds() {
-//   const select = document.getElementById('elementId');
-//   const elementRegistry = modeler.get('elementRegistry');
-//   select.innerHTML = '';
-
-//   elementRegistry.getAll().forEach(element => {
-//     // Considera solo elementi disegnati come SHAPE (non connection)
-//     const isShape = !!element.x && !!element.y;
-//     // Verifica che l'elemento abbia un nodo grafico SVG (quindi è visibile)
-//     const hasGraphics = !!elementRegistry.getGraphics(element);
-
-//     if (
-//       isShape &&
-//       hasGraphics &&
-//       (
-//         element.type === 'bpmn:Message' ||
-//         element.type === 'bpmn:ExclusiveGateway' ||
-//         element.type === 'bpmn:ParallelGateway' ||
-//         element.type === 'bpmn:InclusiveGateway' ||
-//         element.type === 'bpmn:EventBasedGateway' ||
-//         element.type === 'bpmn:StartEvent' ||
-//         element.type === 'bpmn:EndEvent'
-//       )
-//     ) {
-//       const option = document.createElement('option');
-//       option.value = element.id;
-//       option.text = element.businessObject.name || element.id;
-//       select.appendChild(option);
-//     }
-//   });
-// }
-
-// Funzione per aggiornare la select dei sequence flow (edge)
-// function aggiornaSelectEdgeIds() {
-//   const select = document.getElementById('edgeId');
-//   if (!select) return;
-//   const elementRegistry = window.bpmnjs.get('elementRegistry');
-//   select.innerHTML = '';
-//   elementRegistry.getAll().forEach(element => {
-//     if (element.type === 'bpmn:SequenceFlow') {
-//       const option = document.createElement('option');
-//       option.value = element.id;
-//       option.text = element.businessObject.name || element.id;
-//       select.appendChild(option);
-//     }
-//   });
-// }
-
-// Listener che aggiorna le select e inizializza le API dopo il caricamento del diagramma
-// modeler.on('import.render.complete', () => {
-//   aggiornaSelectElementIds();
-//   aggiornaSelectEdgeIds();
-//   if (isValidating) {
-//     reporter.validateDiagram();
-//   }
-//   try {
-//     // Ottieni l'istanza dell'animazione token e inizializza i controlli
-//     const tokenAnimation = modeler.get('customTokenAnimation');
-//     animationControls = new CustomTokenAnimationControls(tokenAnimation, modeler.get('eventBus'));
-//     // Collega il servizio overlays all'animazione token
-//     const overlays = modeler.get('overlays');
-//     tokenAnimation._overlays = overlays;
-//     // Espone le API di colorazione e animazione edge globalmente (per l'HTML)
-//     window.colorElement = (elementId, color) => tokenAnimation.colorElement(elementId, color);
-//     window.animateEdge = tokenAnimation.animateEdge.bind(tokenAnimation);
-//   } catch (error) {
-//     console.warn('Token animation not available:', error);
-//   }
-// });
-
-// Listener che aggiorna le select e valida il diagramma dopo ogni modifica
-// modeler.on('commandStack.changed', () => {
-//   aggiornaSelectElementIds();
-//   aggiornaSelectEdgeIds();
-//   if (isValidating) {
-//     reporter.validateDiagram();
-//   }
-//   isDirty = true;
-// });
-// addDeployButtonToCanvas(modeler);
-// Renderizza il modellatore BPEnv nella colonna di destra
-// bpenvModeler.render('bpenv-container');
-// setTimeout(function() {
-//   if (typeof window.bpenvModeler?.getPlaces === 'function') {
-//     console.log("DEBUG PLACES FROM WINDOW after rendering:", window.bpenvModeler.getPlaces());
-//   } else {
-//     console.error("bpenvModeler.getPlaces non trovata!");
-//   }
-// }, 1000);
-
-// Carica e visualizza il diagramma BPMN di default all'avvio
-// renderModel(xml);

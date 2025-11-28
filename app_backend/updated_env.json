@@ -1,0 +1,1803 @@
+{
+  "physicalPlaces": [
+    {
+      "id": "FireDepartment",
+      "name": "FireDepartment",
+      "coordinates": [
+        [
+          13.05257147333223,
+          43.130431081590416
+        ],
+        [
+          13.052646742822711,
+          43.130274850482465
+        ],
+        [
+          13.053052615529035,
+          43.13012673947571
+        ],
+        [
+          13.05346008079696,
+          43.130600693434786
+        ],
+        [
+          13.05324671945173,
+          43.13090689889421
+        ],
+        [
+          13.053068268733208,
+          43.13096265586378
+        ],
+        [
+          13.052938412098323,
+          43.130912037223766
+        ]
+      ],
+      "attributes": {
+        "amenity": "fire_department"
+      }
+    },
+    {
+      "id": "Place_f33irhyv20s",
+      "name": "Place_f33irhyv20s",
+      "coordinates": [
+        [
+          13.053275893362537,
+          43.13038645142376
+        ],
+        [
+          13.053393969344958,
+          43.13033841961828
+        ],
+        [
+          13.052447578229128,
+          43.129040432943725
+        ],
+        [
+          13.05296405883282,
+          43.12881035613859
+        ],
+        [
+          13.053563988662699,
+          43.12914692157088
+        ],
+        [
+          13.05525269343715,
+          43.12929926006268
+        ],
+        [
+          13.055823314270514,
+          43.12967163777765
+        ],
+        [
+          13.056335407570714,
+          43.130109370972946
+        ],
+        [
+          13.057166371897804,
+          43.13041641941513
+        ],
+        [
+          13.057731474679356,
+          43.130336901212445
+        ],
+        [
+          13.058522365285901,
+          43.129799449196554
+        ],
+        [
+          13.059064084192148,
+          43.128896049121494
+        ],
+        [
+          13.059448493391796,
+          43.12870053294523
+        ],
+        [
+          13.059599109068325,
+          43.12862144163847
+        ],
+        [
+          13.059779847880161,
+          43.12868511741058
+        ],
+        [
+          13.059620502826583,
+          43.128771800859
+        ],
+        [
+          13.059483003830593,
+          43.1288453463541
+        ],
+        [
+          13.059138668351487,
+          43.12908724042882
+        ],
+        [
+          13.05883359245413,
+          43.12965391184437
+        ],
+        [
+          13.058300150625605,
+          43.130193774788864
+        ],
+        [
+          13.057210064012978,
+          43.130578954431826
+        ],
+        [
+          13.056473494555833,
+          43.13034954359031
+        ],
+        [
+          13.055794412343394,
+          43.12994386389528
+        ],
+        [
+          13.055360385907365,
+          43.12953494660252
+        ],
+        [
+          13.05451490277182,
+          43.129361020586884
+        ],
+        [
+          13.053732651082452,
+          43.129339498487184
+        ],
+        [
+          13.053188806369363,
+          43.12916029040278
+        ],
+        [
+          13.052902591354021,
+          43.12898071868821
+        ],
+        [
+          13.052763961609706,
+          43.12916817966271
+        ],
+        [
+          13.053635497186603,
+          43.13040476731467
+        ],
+        [
+          13.05336718743382,
+          43.130492642395836
+        ]
+      ],
+      "attributes": {
+        "street": "SP256",
+        "steepness": "medium"
+      }
+    },
+    {
+      "id": "Place_j3wyt9j8h87",
+      "name": "Place_j3wyt9j8h87",
+      "coordinates": [
+        [
+          13.059779847880161,
+          43.12868511741058
+        ],
+        [
+          13.060411348203198,
+          43.12875143389073
+        ],
+        [
+          13.06061519951074,
+          43.12859150178909
+        ],
+        [
+          13.060623111934634,
+          43.12864747034723
+        ],
+        [
+          13.06040711819793,
+          43.12881228022448
+        ],
+        [
+          13.059699006815212,
+          43.128729094833005
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "low"
+      }
+    },
+    {
+      "id": "Place_5zj5lr3qq4d",
+      "name": "Place_5zj5lr3qq4d",
+      "coordinates": [
+        [
+          13.060245933574503,
+          43.129026903692164
+        ],
+        [
+          13.059889162709617,
+          43.128958872183944
+        ],
+        [
+          13.059701603992766,
+          43.12906261284098
+        ],
+        [
+          13.059626963867164,
+          43.12929943917487
+        ],
+        [
+          13.059671929534641,
+          43.12929821907355
+        ],
+        [
+          13.059765218882589,
+          43.12907174259939
+        ],
+        [
+          13.059904929517378,
+          43.12900469984862
+        ],
+        [
+          13.060228624674938,
+          43.1290624445505
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "medium"
+      }
+    },
+    {
+      "id": "Place_5557jejiyok",
+      "name": "Place_5557jejiyok",
+      "coordinates": [
+        [
+          13.060358211538636,
+          43.12880653491783
+        ],
+        [
+          13.060245933574503,
+          43.129026903692164
+        ],
+        [
+          13.06028989039688,
+          43.12902913354242
+        ],
+        [
+          13.06040711819793,
+          43.12881228022448
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "low"
+      }
+    },
+    {
+      "id": "Place_h4sbv9p84nq",
+      "name": "Place_h4sbv9p84nq",
+      "coordinates": [
+        [
+          13.06028989039688,
+          43.12902913354242
+        ],
+        [
+          13.060245933574503,
+          43.129026903692164
+        ],
+        [
+          13.060228624674938,
+          43.1290624445505
+        ],
+        [
+          13.05988060251285,
+          43.13005832577974
+        ],
+        [
+          13.059943442560472,
+          43.13027464579878
+        ],
+        [
+          13.059986222238438,
+          43.13026726987985
+        ],
+        [
+          13.05993618964403,
+          43.130042669674964
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "medium"
+      }
+    },
+    {
+      "id": "Place_tmvfla98o9",
+      "name": "Place_tmvfla98o9",
+      "coordinates": [
+        [
+          13.05959286478976,
+          43.129658239190945
+        ],
+        [
+          13.059507699007984,
+          43.12995707808611
+        ],
+        [
+          13.059361376230438,
+          43.130299537100285
+        ],
+        [
+          13.0595073142518,
+          43.13049089885797
+        ],
+        [
+          13.059671893710373,
+          43.130497637925856
+        ],
+        [
+          13.059816715938796,
+          43.1303196420468
+        ],
+        [
+          13.059943442560472,
+          43.13027464579878
+        ],
+        [
+          13.059963981369,
+          43.13031944549007
+        ],
+        [
+          13.059793707518871,
+          43.130427748140136
+        ],
+        [
+          13.059727029271832,
+          43.13054155416657
+        ],
+        [
+          13.059535786209565,
+          43.13054999203399
+        ],
+        [
+          13.059455603020394,
+          43.130518416713755
+        ],
+        [
+          13.059310242133312,
+          43.1303078205637
+        ],
+        [
+          13.059336828785769,
+          43.13013591740875
+        ],
+        [
+          13.059424168439996,
+          43.12998539645301
+        ],
+        [
+          13.059524205048366,
+          43.129712966761446
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "low"
+      }
+    },
+    {
+      "id": "Place_jld4h5o6tm",
+      "name": "Place_jld4h5o6tm",
+      "coordinates": [
+        [
+          13.059986222238438,
+          43.13026726987985
+        ],
+        [
+          13.059943442560472,
+          43.13027464579878
+        ],
+        [
+          13.059963981369,
+          43.13031944549007
+        ],
+        [
+          13.060087944316718,
+          43.13040774957403
+        ],
+        [
+          13.060361054756788,
+          43.13049889408711
+        ],
+        [
+          13.060371622767189,
+          43.130465654970266
+        ],
+        [
+          13.060114511705413,
+          43.13037926160459
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "low"
+      }
+    },
+    {
+      "id": "Place_dxhqrne8ix9",
+      "name": "Place_dxhqrne8ix9",
+      "coordinates": [
+        [
+          13.060361054756788,
+          43.13049889408711
+        ],
+        [
+          13.060371622767189,
+          43.130465654970266
+        ],
+        [
+          13.060417668308995,
+          43.13032292409184
+        ],
+        [
+          13.060467309715817,
+          43.13032518061317
+        ],
+        [
+          13.060401894165858,
+          43.13050840490777
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "low"
+      }
+    },
+    {
+      "id": "Place_0dpigaqcxu5",
+      "name": "Place_0dpigaqcxu5",
+      "coordinates": [
+        [
+          13.060408306895603,
+          43.13035194240601
+        ],
+        [
+          13.060218618499599,
+          43.130351459161716
+        ],
+        [
+          13.060090548087093,
+          43.13028408587519
+        ],
+        [
+          13.06006080061846,
+          43.13014364816567
+        ],
+        [
+          13.060123778269073,
+          43.13000956438202
+        ],
+        [
+          13.060252738812652,
+          43.12983802170362
+        ],
+        [
+          13.060497943109217,
+          43.12956058194524
+        ],
+        [
+          13.06067818422284,
+          43.12939187087031
+        ],
+        [
+          13.060810917244297,
+          43.12934797673293
+        ],
+        [
+          13.060901909274069,
+          43.12934256128102
+        ],
+        [
+          13.06089933330252,
+          43.12937337042587
+        ],
+        [
+          13.06074817119109,
+          43.1294007563194
+        ],
+        [
+          13.060517307751049,
+          43.12959256011456
+        ],
+        [
+          13.060328326276258,
+          43.12982203736175
+        ],
+        [
+          13.060173229720723,
+          43.130006619311786
+        ],
+        [
+          13.060101538253884,
+          43.130167631183696
+        ],
+        [
+          13.060147367479022,
+          43.130287704704585
+        ],
+        [
+          13.060248689026539,
+          43.13032241355893
+        ],
+        [
+          13.060417668308995,
+          43.13032292409184
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "low"
+      }
+    },
+    {
+      "id": "Place_gxcjrkkzvan",
+      "name": "Place_gxcjrkkzvan",
+      "coordinates": [
+        [
+          13.05959286478976,
+          43.129658239190945
+        ],
+        [
+          13.059612967792383,
+          43.12963149147399
+        ],
+        [
+          13.059771934351915,
+          43.12966340667907
+        ],
+        [
+          13.059752174022337,
+          43.129941577543434
+        ],
+        [
+          13.059520144267882,
+          43.12991340890488
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 3,
+        "district": "A"
+      }
+    },
+    {
+      "id": "Place_rvuch99593q",
+      "name": "Place_rvuch99593q",
+      "coordinates": [
+        [
+          13.059711292587107,
+          43.13003047278082
+        ],
+        [
+          13.059493647847301,
+          43.129989964003784
+        ],
+        [
+          13.059401852217986,
+          43.13020480585641
+        ],
+        [
+          13.059572505057483,
+          43.130231053166966
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 1,
+        "district": "A"
+      }
+    },
+    {
+      "id": "Place_uowvd056bg",
+      "name": "Place_uowvd056bg",
+      "coordinates": [
+        [
+          13.060101538253884,
+          43.130167631183696
+        ],
+        [
+          13.060173229720723,
+          43.130006619311786
+        ],
+        [
+          13.060282168737885,
+          43.1298769699645
+        ],
+        [
+          13.06047221827304,
+          43.12995897148599
+        ],
+        [
+          13.060528649773396,
+          43.12989159336172
+        ],
+        [
+          13.06061886806446,
+          43.12991634451802
+        ],
+        [
+          13.06058465094285,
+          43.12996943724235
+        ],
+        [
+          13.060502864811257,
+          43.12997380009571
+        ],
+        [
+          13.060300760486927,
+          43.13022061485887
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "B"
+      }
+    },
+    {
+      "id": "Place_7k3f5tgd1q",
+      "name": "Place_7k3f5tgd1q",
+      "coordinates": [
+        [
+          13.06038648473431,
+          43.12975141654806
+        ],
+        [
+          13.060617739899675,
+          43.12987125598437
+        ],
+        [
+          13.06076370348777,
+          43.12973770477487
+        ],
+        [
+          13.060517307751049,
+          43.12959256011456
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "B"
+      }
+    },
+    {
+      "id": "Place_yx5j9hgtbx",
+      "name": "Place_yx5j9hgtbx",
+      "coordinates": [
+        [
+          13.060608396990247,
+          43.129516882280114
+        ],
+        [
+          13.060802061090444,
+          43.129612344282464
+        ],
+        [
+          13.060873519280506,
+          43.129504732165884
+        ],
+        [
+          13.060718091350415,
+          43.129425747004206
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "B"
+      }
+    },
+    {
+      "id": "Place_punkpjhtyoj",
+      "name": "Place_punkpjhtyoj",
+      "coordinates": [
+        [
+          13.059671929534641,
+          43.12929821907355
+        ],
+        [
+          13.059704717302642,
+          43.129377843333714
+        ],
+        [
+          13.059872720811013,
+          43.12937346346163
+        ],
+        [
+          13.059856368236922,
+          43.1291787710405
+        ],
+        [
+          13.059725583117268,
+          43.12916796556735
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_oq2c0aqlzb",
+      "name": "Place_oq2c0aqlzb",
+      "coordinates": [
+        [
+          13.059869565276035,
+          43.129021670045546
+        ],
+        [
+          13.059862430808167,
+          43.12925095159443
+        ],
+        [
+          13.060044597297457,
+          43.12925102214345
+        ],
+        [
+          13.060055439932471,
+          43.12903154974441
+        ],
+        [
+          13.059904929517378,
+          43.12900469984862
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_uk6oiujg92d",
+      "name": "Place_uk6oiujg92d",
+      "coordinates": [
+        [
+          13.059659931956345,
+          43.12875035148838
+        ],
+        [
+          13.059626439430009,
+          43.12890887789055
+        ],
+        [
+          13.059807852979581,
+          43.128943603061686
+        ],
+        [
+          13.059868721291213,
+          43.12874903205301
+        ],
+        [
+          13.059699006815212,
+          43.128729094833005
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_fjuo64ryhph",
+      "name": "Place_fjuo64ryhph",
+      "coordinates": [
+        [
+          13.060014312410484,
+          43.1287661353748
+        ],
+        [
+          13.059962574382965,
+          43.128925141258435
+        ],
+        [
+          13.060159677564437,
+          43.12896018048306
+        ],
+        [
+          13.060224719928357,
+          43.12879085299684
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_canntj1n78g",
+      "name": "Place_canntj1n78g",
+      "coordinates": [
+        [
+          13.060292419194528,
+          43.128738944665486
+        ],
+        [
+          13.06042685489876,
+          43.12867475621471
+        ],
+        [
+          13.060529052671559,
+          43.12854968214384
+        ],
+        [
+          13.060405256939948,
+          43.12849337962996
+        ],
+        [
+          13.060329832727293,
+          43.128592386458365
+        ],
+        [
+          13.060211514991698,
+          43.12866850039521
+        ],
+        [
+          13.060181887700985,
+          43.12872733729563
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_xujm501a3z",
+      "name": "Place_xujm501a3z",
+      "coordinates": [
+        [
+          13.060513664031253,
+          43.12873098252578
+        ],
+        [
+          13.060806732405885,
+          43.12879773344338
+        ],
+        [
+          13.06086173334677,
+          43.12868339722354
+        ],
+        [
+          13.060623111934634,
+          43.12864747034723
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_6yeec1gedgj",
+      "name": "Place_6yeec1gedgj",
+      "coordinates": [
+        [
+          13.060392816170866,
+          43.12883873680576
+        ],
+        [
+          13.06067056175334,
+          43.12891066041021
+        ],
+        [
+          13.060599510633047,
+          43.129091653790226
+        ],
+        [
+          13.060555547098147,
+          43.12908782562832
+        ],
+        [
+          13.060554860894824,
+          43.12904984957024
+        ],
+        [
+          13.06042741316587,
+          43.128997918927865
+        ],
+        [
+          13.060322836293581,
+          43.12896818880196
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_wwsivmyu8ze",
+      "name": "Place_wwsivmyu8ze",
+      "coordinates": [
+        [
+          13.060270953107498,
+          43.12908339912542
+        ],
+        [
+          13.06048514728948,
+          43.129111711317506
+        ],
+        [
+          13.060419155464869,
+          43.1292708047086
+        ],
+        [
+          13.060214097758427,
+          43.129246320181466
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_nkav852xeap",
+      "name": "Place_nkav852xeap",
+      "coordinates": [
+        [
+          13.059136525035365,
+          43.12832316415813
+        ],
+        [
+          13.059217269271064,
+          43.128313237435265
+        ],
+        [
+          13.059306361963651,
+          43.12849298130061
+        ],
+        [
+          13.059386933221509,
+          43.12849389822421
+        ],
+        [
+          13.05938630503882,
+          43.12861420113691
+        ],
+        [
+          13.059485341599283,
+          43.12868118322331
+        ],
+        [
+          13.059325298376368,
+          43.1287631918112
+        ],
+        [
+          13.059190366664627,
+          43.128622041482004
+        ],
+        [
+          13.059184002900873,
+          43.12850149938728
+        ],
+        [
+          13.059227138112139,
+          43.12850149938728
+        ]
+      ],
+      "attributes": {
+        "fire": "false",
+        "people": 0,
+        "district": "C"
+      }
+    },
+    {
+      "id": "Place_e77k7bgv1pb",
+      "name": "Place_e77k7bgv1pb",
+      "coordinates": [
+        [
+          13.060270953107498,
+          43.12908339912542
+        ],
+        [
+          13.06048514728948,
+          43.129111711317506
+        ],
+        [
+          13.060810917244297,
+          43.12934797673293
+        ],
+        [
+          13.060901909274069,
+          43.12934256128102
+        ],
+        [
+          13.060500187350485,
+          43.129083521056884
+        ],
+        [
+          13.06028989039688,
+          43.12902913354242
+        ]
+      ],
+      "attributes": {
+        "street": "Rodolfo",
+        "steepness": "high"
+      }
+    },
+    {
+      "id": "Place_s4e2f9mwcdi",
+      "name": "Place_s4e2f9mwcdi",
+      "coordinates": [
+        [
+          13.05296405883282,
+          43.12881035613859
+        ],
+        [
+          13.052801593233086,
+          43.12888272984256
+        ],
+        [
+          13.052623696432194,
+          43.12862457670744
+        ],
+        [
+          13.052500019728392,
+          43.128499930426585
+        ],
+        [
+          13.052299484207593,
+          43.127753461138184
+        ],
+        [
+          13.051786227528385,
+          43.12723184015849
+        ],
+        [
+          13.051095384629141,
+          43.127040289677524
+        ],
+        [
+          13.050727801837583,
+          43.127094850715
+        ],
+        [
+          13.05050586010206,
+          43.126941566903696
+        ],
+        [
+          13.05133141112865,
+          43.1269291306983
+        ],
+        [
+          13.052047041899243,
+          43.12721954778263
+        ],
+        [
+          13.05245953834379,
+          43.12768313397902
+        ],
+        [
+          13.052656232565317,
+          43.12835642634883
+        ],
+        [
+          13.05291215502514,
+          43.12837667364687
+        ],
+        [
+          13.052981068590654,
+          43.128480449929526
+        ],
+        [
+          13.052840746256685,
+          43.12863305897105
+        ]
+      ],
+      "attributes": {
+        "street": "SP11",
+        "steepness": "low"
+      }
+    },
+    {
+      "id": "Hospital",
+      "name": "Hospital",
+      "coordinates": [
+        [
+          13.050727801837583,
+          43.127094850715
+        ],
+        [
+          13.050223803674562,
+          43.12702677521014
+        ],
+        [
+          13.049878710541117,
+          43.12677596628134
+        ],
+        [
+          13.049134483431521,
+          43.12690315603385
+        ],
+        [
+          13.049724401938015,
+          43.12801514455242
+        ],
+        [
+          13.050878301973034,
+          43.12803869864055
+        ],
+        [
+          13.051386995057383,
+          43.128415490933236
+        ],
+        [
+          13.05168989956211,
+          43.128327337319575
+        ],
+        [
+          13.051566682500953,
+          43.127330131153144
+        ],
+        [
+          13.051345931245786,
+          43.12710975897781
+        ],
+        [
+          13.051095384629141,
+          43.127040289677524
+        ]
+      ],
+      "attributes": {
+        "amenity": "hospital"
+      }
+    }
+  ],
+  "edges": [
+    {
+      "id": "Edge_99mf3f4jrgq",
+      "name": "Edge_99mf3f4jrgq",
+      "source": "Place_q0uzygye9",
+      "target": "Place_f33irhyv20s",
+      "attributes": []
+    },
+    {
+      "id": "Edge_daw5gm2hgtf",
+      "name": "Edge_daw5gm2hgtf",
+      "source": "Place_f33irhyv20s",
+      "target": "Place_q0uzygye9",
+      "attributes": []
+    },
+    {
+      "id": "Edge_9bikwmjlruk",
+      "name": "Edge_9bikwmjlruk",
+      "source": "Place_f33irhyv20s",
+      "target": "Place_nkav852xeap",
+      "attributes": []
+    },
+    {
+      "id": "Edge_l2wk7we9s4l",
+      "name": "Edge_l2wk7we9s4l",
+      "source": "Place_f33irhyv20s",
+      "target": "Place_j3wyt9j8h87",
+      "attributes": []
+    },
+    {
+      "id": "Edge_mmkfkidnnzh",
+      "name": "Edge_mmkfkidnnzh",
+      "source": "Place_j3wyt9j8h87",
+      "target": "Place_f33irhyv20s",
+      "attributes": []
+    },
+    {
+      "id": "Edge_3789wqoiaw4",
+      "name": "Edge_3789wqoiaw4",
+      "source": "Place_nkav852xeap",
+      "target": "Place_f33irhyv20s",
+      "attributes": []
+    },
+    {
+      "id": "Edge_diiegzbkbx6",
+      "name": "Edge_diiegzbkbx6",
+      "source": "Place_j3wyt9j8h87",
+      "target": "Place_uk6oiujg92d",
+      "attributes": []
+    },
+    {
+      "id": "Edge_fgyaxlhts7",
+      "name": "Edge_fgyaxlhts7",
+      "source": "Place_uk6oiujg92d",
+      "target": "Place_j3wyt9j8h87",
+      "attributes": []
+    },
+    {
+      "id": "Edge_mdw9pqowir",
+      "name": "Edge_mdw9pqowir",
+      "source": "Place_j3wyt9j8h87",
+      "target": "Place_fjuo64ryhph",
+      "attributes": []
+    },
+    {
+      "id": "Edge_oujs8mmdxj",
+      "name": "Edge_oujs8mmdxj",
+      "source": "Place_fjuo64ryhph",
+      "target": "Place_j3wyt9j8h87",
+      "attributes": []
+    },
+    {
+      "id": "Edge_ggp9n1cdagt",
+      "name": "Edge_ggp9n1cdagt",
+      "source": "Place_canntj1n78g",
+      "target": "Place_j3wyt9j8h87",
+      "attributes": []
+    },
+    {
+      "id": "Edge_8tefjsupvz3",
+      "name": "Edge_8tefjsupvz3",
+      "source": "Place_j3wyt9j8h87",
+      "target": "Place_canntj1n78g",
+      "attributes": []
+    },
+    {
+      "id": "Edge_s6lfd5r7yzs",
+      "name": "Edge_s6lfd5r7yzs",
+      "source": "Place_xujm501a3z",
+      "target": "Place_j3wyt9j8h87",
+      "attributes": []
+    },
+    {
+      "id": "Edge_kov19ke173",
+      "name": "Edge_kov19ke173",
+      "source": "Place_j3wyt9j8h87",
+      "target": "Place_xujm501a3z",
+      "attributes": []
+    },
+    {
+      "id": "Edge_eib5x7v24",
+      "name": "Edge_eib5x7v24",
+      "source": "Place_5557jejiyok",
+      "target": "Place_6yeec1gedgj",
+      "attributes": []
+    },
+    {
+      "id": "Edge_pv6nzquitcr",
+      "name": "Edge_pv6nzquitcr",
+      "source": "Place_6yeec1gedgj",
+      "target": "Place_5557jejiyok",
+      "attributes": []
+    },
+    {
+      "id": "Edge_byzzpj8szpk",
+      "name": "Edge_byzzpj8szpk",
+      "source": "Place_e77k7bgv1pb",
+      "target": "Place_wwsivmyu8ze",
+      "attributes": []
+    },
+    {
+      "id": "Edge_a2ahi0qaot",
+      "name": "Edge_a2ahi0qaot",
+      "source": "Place_wwsivmyu8ze",
+      "target": "Place_e77k7bgv1pb",
+      "attributes": []
+    },
+    {
+      "id": "Edge_dha0067ld2",
+      "name": "Edge_dha0067ld2",
+      "source": "Place_e77k7bgv1pb",
+      "target": "Place_h4sbv9p84nq",
+      "attributes": []
+    },
+    {
+      "id": "Edge_ca2qvpfndqq",
+      "name": "Edge_ca2qvpfndqq",
+      "source": "Place_h4sbv9p84nq",
+      "target": "Place_e77k7bgv1pb",
+      "attributes": []
+    },
+    {
+      "id": "Edge_8jzl9x9xkmb",
+      "name": "Edge_8jzl9x9xkmb",
+      "source": "Place_h4sbv9p84nq",
+      "target": "Place_5zj5lr3qq4d",
+      "attributes": []
+    },
+    {
+      "id": "Edge_16yd2dh401p",
+      "name": "Edge_16yd2dh401p",
+      "source": "Place_5zj5lr3qq4d",
+      "target": "Place_h4sbv9p84nq",
+      "attributes": []
+    },
+    {
+      "id": "Edge_k58817sdl7",
+      "name": "Edge_k58817sdl7",
+      "source": "Place_5zj5lr3qq4d",
+      "target": "Place_oq2c0aqlzb",
+      "attributes": []
+    },
+    {
+      "id": "Edge_9bz322w43mh",
+      "name": "Edge_9bz322w43mh",
+      "source": "Place_oq2c0aqlzb",
+      "target": "Place_5zj5lr3qq4d",
+      "attributes": []
+    },
+    {
+      "id": "Edge_nnka8emngcd",
+      "name": "Edge_nnka8emngcd",
+      "source": "Place_5zj5lr3qq4d",
+      "target": "Place_punkpjhtyoj",
+      "attributes": []
+    },
+    {
+      "id": "Edge_xh08e8rca4",
+      "name": "Edge_xh08e8rca4",
+      "source": "Place_punkpjhtyoj",
+      "target": "Place_5zj5lr3qq4d",
+      "attributes": []
+    },
+    {
+      "id": "Edge_qkjwezhvu7",
+      "name": "Edge_qkjwezhvu7",
+      "source": "Place_0dpigaqcxu5",
+      "target": "Place_yx5j9hgtbx",
+      "attributes": []
+    },
+    {
+      "id": "Edge_xxknxqsthpj",
+      "name": "Edge_xxknxqsthpj",
+      "source": "Place_yx5j9hgtbx",
+      "target": "Place_0dpigaqcxu5",
+      "attributes": []
+    },
+    {
+      "id": "Edge_bggvjflgmar",
+      "name": "Edge_bggvjflgmar",
+      "source": "Place_0dpigaqcxu5",
+      "target": "Place_7k3f5tgd1q",
+      "attributes": []
+    },
+    {
+      "id": "Edge_7h7n14zdhvg",
+      "name": "Edge_7h7n14zdhvg",
+      "source": "Place_7k3f5tgd1q",
+      "target": "Place_0dpigaqcxu5",
+      "attributes": []
+    },
+    {
+      "id": "Edge_ipfrcxgq5ro",
+      "name": "Edge_ipfrcxgq5ro",
+      "source": "Place_0dpigaqcxu5",
+      "target": "Place_uowvd056bg",
+      "attributes": []
+    },
+    {
+      "id": "Edge_cl5ed4owpir",
+      "name": "Edge_cl5ed4owpir",
+      "source": "Place_uowvd056bg",
+      "target": "Place_0dpigaqcxu5",
+      "attributes": []
+    },
+    {
+      "id": "Edge_rjgo2o3ls1",
+      "name": "Edge_rjgo2o3ls1",
+      "source": "Place_gxcjrkkzvan",
+      "target": "Place_tmvfla98o9",
+      "attributes": []
+    },
+    {
+      "id": "Edge_vcnfsksp4vr",
+      "name": "Edge_vcnfsksp4vr",
+      "source": "Place_tmvfla98o9",
+      "target": "Place_gxcjrkkzvan",
+      "attributes": []
+    },
+    {
+      "id": "Edge_ed4e83exo5k",
+      "name": "Edge_ed4e83exo5k",
+      "source": "Place_tmvfla98o9",
+      "target": "Place_rvuch99593q",
+      "attributes": []
+    },
+    {
+      "id": "Edge_pz8yohos6m",
+      "name": "Edge_pz8yohos6m",
+      "source": "Place_rvuch99593q",
+      "target": "Place_tmvfla98o9",
+      "attributes": []
+    },
+    {
+      "id": "Edge_6m2gh5wdiyx",
+      "name": "Edge_6m2gh5wdiyx",
+      "source": "Place_e77k7bgv1pb",
+      "target": "Place_0dpigaqcxu5",
+      "attributes": []
+    },
+    {
+      "id": "Edge_n553bcov2e",
+      "name": "Edge_n553bcov2e",
+      "source": "Place_0dpigaqcxu5",
+      "target": "Place_e77k7bgv1pb",
+      "attributes": []
+    },
+    {
+      "id": "Edge_x79b0vczrd",
+      "name": "Edge_x79b0vczrd",
+      "source": "Place_h4sbv9p84nq",
+      "target": "Place_tmvfla98o9",
+      "attributes": []
+    },
+    {
+      "id": "Edge_nhkms9wbdn",
+      "name": "Edge_nhkms9wbdn",
+      "source": "Place_tmvfla98o9",
+      "target": "Place_h4sbv9p84nq",
+      "attributes": []
+    },
+    {
+      "id": "Edge_6flh0en297",
+      "name": "Edge_6flh0en297",
+      "source": "Place_h4sbv9p84nq",
+      "target": "Place_jld4h5o6tm",
+      "attributes": []
+    },
+    {
+      "id": "Edge_e7kk5y81gc",
+      "name": "Edge_e7kk5y81gc",
+      "source": "Place_jld4h5o6tm",
+      "target": "Place_h4sbv9p84nq",
+      "attributes": []
+    },
+    {
+      "id": "Edge_eho0kmhruyr",
+      "name": "Edge_eho0kmhruyr",
+      "source": "Place_0dpigaqcxu5",
+      "target": "Place_dxhqrne8ix9",
+      "attributes": []
+    },
+    {
+      "id": "Edge_kluwwpxdf0r",
+      "name": "Edge_kluwwpxdf0r",
+      "source": "Place_dxhqrne8ix9",
+      "target": "Place_0dpigaqcxu5",
+      "attributes": []
+    },
+    {
+      "id": "Edge_yii97iemles",
+      "name": "Edge_yii97iemles",
+      "source": "Place_dxhqrne8ix9",
+      "target": "Place_jld4h5o6tm",
+      "attributes": []
+    },
+    {
+      "id": "Edge_d2d26sohchq",
+      "name": "Edge_d2d26sohchq",
+      "source": "Place_jld4h5o6tm",
+      "target": "Place_dxhqrne8ix9",
+      "attributes": []
+    },
+    {
+      "id": "Edge_8waboucxyca",
+      "name": "Edge_8waboucxyca",
+      "source": "Place_j3wyt9j8h87",
+      "target": "Place_5557jejiyok",
+      "attributes": []
+    },
+    {
+      "id": "Edge_9x3lt8ygyq7",
+      "name": "Edge_9x3lt8ygyq7",
+      "source": "Place_5557jejiyok",
+      "target": "Place_j3wyt9j8h87",
+      "attributes": []
+    },
+    {
+      "id": "Edge_wikis2fqw4a",
+      "name": "Edge_wikis2fqw4a",
+      "source": "Place_5557jejiyok",
+      "target": "Place_h4sbv9p84nq",
+      "attributes": []
+    },
+    {
+      "id": "Edge_soq0fy25k2",
+      "name": "Edge_soq0fy25k2",
+      "source": "Place_h4sbv9p84nq",
+      "target": "Place_5557jejiyok",
+      "attributes": []
+    },
+    {
+      "id": "Edge_rtz85pbxq3a",
+      "name": "Edge_rtz85pbxq3a",
+      "source": "Hospital",
+      "target": "Place_s4e2f9mwcdi",
+      "attributes": []
+    },
+    {
+      "id": "Edge_w9el68c61w",
+      "name": "Edge_w9el68c61w",
+      "source": "Place_s4e2f9mwcdi",
+      "target": "Hospital",
+      "attributes": []
+    },
+    {
+      "id": "Edge_zefnxsmqyj",
+      "name": "Edge_zefnxsmqyj",
+      "source": "Place_s4e2f9mwcdi",
+      "target": "Place_f33irhyv20s",
+      "attributes": []
+    },
+    {
+      "id": "Edge_sdvyljc245j",
+      "name": "Edge_sdvyljc245j",
+      "source": "Place_f33irhyv20s",
+      "target": "Place_s4e2f9mwcdi",
+      "attributes": []
+    }
+  ],
+  "logicalPlaces": [
+    {
+      "id": "Lp_trtkx5",
+      "name": "District A",
+      "conditions": [
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "A"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    },
+    {
+      "id": "Lp_vt2ehr",
+      "name": "District B",
+      "conditions": [
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "B"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    },
+    {
+      "id": "Lp_x4zrei",
+      "name": "District C",
+      "conditions": [
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "C"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    },
+    {
+      "id": "Lp_fm6efb",
+      "name": "Fire Site A",
+      "conditions": [
+        {
+          "attribute": "fire",
+          "operator": "==",
+          "value": "true"
+        },
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "A"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {
+        "people": 4,
+        "fire": "false"
+      }
+    },
+    {
+      "id": "FireSiteB",
+      "name": "FireSiteB",
+      "conditions": [
+        {
+          "attribute": "fire",
+          "operator": "==",
+          "value": "false"
+        },
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "B"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {
+        "people": 4,
+        "fire": "false"
+      }
+    },
+    {
+      "id": "Lp_fm6ef2",
+      "name": "Fire Site C",
+      "conditions": [
+        {
+          "attribute": "fire",
+          "operator": "==",
+          "value": "true"
+        },
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "C"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {
+        "people": 0,
+        "fire": "false"
+      }
+    },
+    {
+      "id": "Lp_fm6ef3",
+      "name": "Rescue Site A",
+      "conditions": [
+        {
+          "attribute": "fire",
+          "operator": "==",
+          "value": "true"
+        },
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "A"
+        },
+        {
+          "attribute": "people",
+          "operator": ">",
+          "value": 0
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    },
+    {
+      "id": "Lp_fm6ef4",
+      "name": "Rescue Site B",
+      "conditions": [
+        {
+          "attribute": "fire",
+          "operator": "==",
+          "value": "true"
+        },
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "B"
+        },
+        {
+          "attribute": "people",
+          "operator": ">",
+          "value": 0
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    },
+    {
+      "id": "Lp_fm6ef5",
+      "name": "Rescue Site C",
+      "conditions": [
+        {
+          "attribute": "fire",
+          "operator": "==",
+          "value": "true"
+        },
+        {
+          "attribute": "district",
+          "operator": "==",
+          "value": "C"
+        },
+        {
+          "attribute": "people",
+          "operator": ">",
+          "value": 0
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    },
+    {
+      "id": "Lp_ob91i7",
+      "name": "SP256",
+      "conditions": [
+        {
+          "attribute": "street",
+          "operator": "==",
+          "value": "SP256"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    },
+    {
+      "id": "Lp_9klstu",
+      "name": "Rodolfo",
+      "conditions": [
+        {
+          "attribute": "street",
+          "operator": "==",
+          "value": "Rodolfo"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    },
+    {
+      "id": "Lp_f9qsnz",
+      "name": "SP11",
+      "conditions": [
+        {
+          "attribute": "street",
+          "operator": "==",
+          "value": "SP11"
+        }
+      ],
+      "operator": "AND",
+      "attributes": {}
+    }
+  ],
+  "views": [
+    {
+      "id": "View_uvhx9s",
+      "name": "Districts",
+      "logicalPlaces": [
+        "Lp_trtkx5",
+        "Lp_vt2ehr",
+        "Lp_x4zrei"
+      ],
+      "aggregations": {}
+    },
+    {
+      "id": "View_ewjhu1",
+      "name": "Fire Sites",
+      "logicalPlaces": [
+        "Lp_fm6efb",
+        "FireSiteB",
+        "Lp_fm6ef2"
+      ],
+      "aggregations": {
+        "people": "SUM",
+        "fire": "OR"
+      }
+    },
+    {
+      "id": "View_ewjhu2",
+      "name": "Rescue Sites",
+      "logicalPlaces": [
+        "Lp_fm6ef3",
+        "Lp_fm6ef4",
+        "Lp_fm6ef5"
+      ],
+      "aggregations": {}
+    },
+    {
+      "id": "View_4lnvpl",
+      "name": "Streets",
+      "logicalPlaces": [
+        "Lp_ob91i7",
+        "Lp_9klstu",
+        "Lp_f9qsnz"
+      ],
+      "aggregations": {}
+    }
+  ]
+}
