@@ -36,7 +36,7 @@ const modeler = new ChoreoModeler({
 });
 
 const eventBus = modeler.get('eventBus');
-eventBus.on('selection.changed', function(event) {
+eventBus.on('selection.changed', function (event) {
   const newlySelected = event.newSelection && event.newSelection[0];
   if (newlySelected && newlySelected.type === 'bpmn:Message') {
     // Il pannello delle proprietà si aggiorna già da solo su nuova selezione,
@@ -211,7 +211,7 @@ modeler.on('import.render.complete', () => {
   }
 });
 
-window.addEventListener('beforeunload', function(e) {
+window.addEventListener('beforeunload', function (e) {
   if (isDirty) {
     // see https://developer.mozilla.org/en-US/docs/Web/API/WindowEventHandlers/onbeforeunload
     e.preventDefault();
@@ -261,7 +261,19 @@ document.getElementById('js-deploy').addEventListener('click', async () => {
   spinner.style.display = 'block';
 
   try {
-    const res = await fetch('http://localhost:3000/deploy');
+    const bpmnContent = await modeler.saveXML({ format: true });
+    let envJson = await bpenvModeler.getModel();
+
+    await ethereum.request({ method: 'eth_requestAccounts' });
+    const provider = new ethers.BrowserProvider(window.ethereum);
+    const signer = await provider.getSigner();
+    const myAddress = await signer.getAddress();
+
+    const res = await fetch('http://localhost:3000/deploy', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bpmnContent, envJson, myAddress })
+    });
     const data = await res.json();
     if (!data.success) throw new Error(data.error);
 
@@ -271,10 +283,6 @@ document.getElementById('js-deploy').addEventListener('click', async () => {
       chorAbi,
       chorBytecode
     } = data.payload;
-
-    await ethereum.request({ method: 'eth_requestAccounts' });
-    const provider = new ethers.BrowserProvider(window.ethereum);
-    const signer = await provider.getSigner();
 
     let env = await bpenvModeler.getModel();
     const EnvFactory = new ethers.ContractFactory(envAbi, envBytecode, signer);
@@ -349,15 +357,15 @@ async function fetchCurrentState() {
       if (skipPrefixes.some(prefix => element.ID.startsWith(prefix))) return;
 
       switch (element.status) {
-      case 'DONE':
-        tokenAnimation.colorElement(element.ID, 'green');
-        break;
-      case 'ENABLED':
-        tokenAnimation.colorElement(element.ID, 'yellow');
-        break;
-      case 'DISABLED':
-        tokenAnimation.colorElement(element.ID, 'red');
-        break;
+        case 'DONE':
+          tokenAnimation.colorElement(element.ID, 'green');
+          break;
+        case 'ENABLED':
+          tokenAnimation.colorElement(element.ID, 'yellow');
+          break;
+        case 'DISABLED':
+          tokenAnimation.colorElement(element.ID, 'red');
+          break;
       }
     });
   } catch (err) {
@@ -485,25 +493,25 @@ async function callChorBackend(functionName, args = []) {
 
   function convertArg(type, value) {
     switch (type) {
-    case 'string':
-      return value;
+      case 'string':
+        return value;
 
-    case 'bytes32':
-      return encodeBytes32String(value);
+      case 'bytes32':
+        return encodeBytes32String(value);
 
-    case 'bytes32[]':
-      return value.split(',').map(v => encodeBytes32String(v));
+      case 'bytes32[]':
+        return value.split(',').map(v => encodeBytes32String(v));
 
-    case 'uint':
-      return Number(value);
+      case 'uint':
+        return Number(value);
 
-    default:
-      throw new Error('Tipo non supportato: ' + type);
+      default:
+        throw new Error('Tipo non supportato: ' + type);
     }
   }
 }
 
-eventBus.on('element.click', function(e) {
+eventBus.on('element.click', function (e) {
   const element = e.element;
   if (element.type === 'bpmn:Message' || element.type === 'chor:Message') {
     const el = currentState.find(s => s.ID === element.id);
@@ -532,7 +540,7 @@ eventBus.on('element.click', function(e) {
 
 function showPopup(messageShape, onConfirm) {
   if (window._activePopup) {
-    try { document.body.removeChild(window._activePopup); } catch (e) {}
+    try { document.body.removeChild(window._activePopup); } catch (e) { }
     window._activePopup = null;
   }
 
@@ -611,7 +619,7 @@ function showPopup(messageShape, onConfirm) {
 
   const cleanup = () => {
     if (window._activePopup) {
-      try { document.body.removeChild(window._activePopup); } catch (e) {}
+      try { document.body.removeChild(window._activePopup); } catch (e) { }
       window._activePopup = null;
     }
   };

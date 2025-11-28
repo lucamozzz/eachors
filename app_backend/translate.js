@@ -1,7 +1,7 @@
-const xml2js = require('xml2js');
-const fs = require('fs').promises;
+import xml2js from 'xml2js';
+import fs from 'fs/promises';
 
-class BPMNToSolidityTranslator {
+export default class Translator {
   constructor() {
     this.modelInstance = null;
     this.participants = [];
@@ -29,6 +29,70 @@ class BPMNToSolidityTranslator {
     this.messagesMap = new Map();
     this.participantsMap = new Map();
     this.choreographyTasksMap = new Map();
+  }
+
+  resolveNextElementId(sequenceFlowId) {
+    const targetId = this.findTargetId(sequenceFlowId);
+    if (!targetId) return null;
+
+    const targetNode = this.allNodes.find(n => n.element.id === targetId);
+
+    if (!targetNode) return targetId;
+
+    // Se è un gateway o end event, usa direttamente il suo ID
+    if (targetNode.type.includes('Gateway') ||
+      targetNode.type === 'endEvent' ||
+      targetNode.type === 'startEvent') {
+      return targetId;
+    }
+
+    // Se è un choreography task, prendi l'ID del suo primo messaggio (top)
+    if (targetNode.type === 'choreographyTask') {
+      return this.getTaskMessageId(targetId, false); // false = prendi top message
+    }
+
+    return targetId;
+  }
+
+  getTaskMessageId(taskId, preferBottom = true) {
+    const taskNode = this.allNodes.find(n =>
+      n.type === 'choreographyTask' && n.element.id === taskId
+    );
+
+    if (!taskNode) return taskId;
+
+    const task = taskNode.element;
+    const messageFlowRefs = task['bpmn2:messageFlowRef'];
+    const messageFlowArray = Array.isArray(messageFlowRefs) ?
+      messageFlowRefs : [messageFlowRefs];
+
+    let topMessage = null;
+    let bottomMessage = null;
+
+    // Identifica messaggi top e bottom
+    messageFlowArray.forEach(msgFlowRef => {
+      const messageFlow = this.findMessageFlow(msgFlowRef);
+      if (messageFlow && messageFlow.messageRef) {
+        const message = this.messagesMap.get(messageFlow.messageRef);
+        if (message) {
+          // Se sourceRef è il participant iniziatore, è top (request)
+          // Altrimenti è bottom (response)
+          if (messageFlow.sourceRef === task.initiatingParticipantRef) {
+            topMessage = message.id;
+          } else {
+            bottomMessage = message.id;
+          }
+        }
+      }
+    });
+
+    // Se preferBottom è true e esiste bottom, ritorna bottom
+    // Altrimenti ritorna top
+    if (preferBottom && bottomMessage) {
+      return bottomMessage;
+    }
+
+    return topMessage || taskId;
   }
 
   async translateBPMNFile(bpmnFilePath, participantsConfig, optionalRoles = [], mandatoryRoles = []) {
@@ -172,46 +236,46 @@ contract ${contractName} {
 
     struct StateMemory {\n`;
 
-        // Add gateway guards to StateMemory
+    // Add gateway guards to StateMemory
     this.gatewayGuards.forEach(guard => {
       header += `        ${guard};\n`;
     });
 
-    header += '    }\n\n';
-    header += '    Element[] elements;\n';
-    header += '    StateMemory currentMemory;\n';
+    header += `    }\n\n`;
+    header += `    Element[] elements;\n`;
+    header += `    StateMemory currentMemory;\n`;
 
     // Add elementsID array
-    header += '    string[] elementsID = [\n';
+    header += `    string[] elementsID = [\n`;
     this.elementsID.forEach((id, index) => {
       header += `        "${id}"`;
       if (index < this.elementsID.length - 1) header += ',';
       header += '\n';
     });
-    header += '    ];\n';
+    header += `    ];\n`;
 
     // Add roleList
-    header += '    string[] roleList = [\n';
+    header += `    string[] roleList = [\n`;
     mandatoryRoles.forEach((role, index) => {
       header += `        "${role}"`;
       if (index < mandatoryRoles.length - 1) header += ',';
       header += '\n';
     });
-    header += '    ];\n\n';
+    header += `    ];\n\n`;
 
     return header;
   }
 
   generateConstructor(participantsConfig, optionalRoles) {
-    let constructor = '    constructor(address environmentAddress) {\n';
+    let constructor = `    constructor(address environmentAddress) {\n`;
 
     // Initialize elements array
-    constructor += '        for (uint i = 0; i < elementsID.length; i++) {\n';
-    constructor += '            elements.push(Element(elementsID[i], State.DISABLED));\n';
-    constructor += '            position[elementsID[i]] = i;\n';
-    constructor += '        }\n\n';
+    constructor += `        for (uint i = 0; i < elementsID.length; i++) {\n`;
+    constructor += `            elements.push(Element(elementsID[i], State.DISABLED));\n`;
+    constructor += `            position[elementsID[i]] = i;\n`;
+    constructor += `        }\n\n`;
 
-    constructor += '        environmentContract = Environment(environmentAddress);\n\n';
+    constructor += `        environmentContract = Environment(environmentAddress);\n\n`;
 
     // Set roles
     Object.entries(participantsConfig).forEach(([role, address]) => {
@@ -220,38 +284,38 @@ contract ${contractName} {
 
     constructor += `\n        enable("${this.startEventAdd}");\n`;
     constructor += `        ${this.parseSid(this.startEventAdd)}();\n\n`;
-    constructor += '        emit functionDone("Contract creation");\n';
-    constructor += '    }\n\n';
+    constructor += `        emit functionDone("Contract creation");\n`;
+    constructor += `    }\n\n`;
 
     return constructor;
   }
 
   generateModifiersAndUtilities(optionalRoles) {
-    let code = '    modifier checkMand(string memory role) {\n';
-    code += '        require(msg.sender == roles[role]);\n';
-    code += '        _;\n';
-    code += '    }\n\n';
+    let code = `    modifier checkMand(string memory role) {\n`;
+    code += `        require(msg.sender == roles[role]);\n`;
+    code += `        _;\n`;
+    code += `    }\n\n`;
 
-    code += '    function enable(string memory _taskID) internal {\n';
-    code += '        elements[position[_taskID]].status = State.ENABLED;\n';
-    code += '    }\n\n';
+    code += `    function enable(string memory _taskID) internal {\n`;
+    code += `        elements[position[_taskID]].status = State.ENABLED;\n`;
+    code += `    }\n\n`;
 
-    code += '    function disable(string memory _taskID) internal {\n';
-    code += '        elements[position[_taskID]].status = State.DISABLED;\n';
-    code += '    }\n\n';
+    code += `    function disable(string memory _taskID) internal {\n`;
+    code += `        elements[position[_taskID]].status = State.DISABLED;\n`;
+    code += `    }\n\n`;
 
-    code += '    function done(string memory _taskID) internal {\n';
-    code += '        elements[position[_taskID]].status = State.DONE;\n';
-    code += '        emit functionDone(_taskID);\n';
-    code += '    }\n\n';
+    code += `    function done(string memory _taskID) internal {\n`;
+    code += `        elements[position[_taskID]].status = State.DONE;\n`;
+    code += `        emit functionDone(_taskID);\n`;
+    code += `    }\n\n`;
 
-    code += '    function getCurrentState()\n';
-    code += '        public\n';
-    code += '        view\n';
-    code += '        returns (Element[] memory, StateMemory memory)\n';
-    code += '    {\n';
-    code += '        return (elements, currentMemory);\n';
-    code += '    }\n\n';
+    code += `    function getCurrentState()\n`;
+    code += `        public\n`;
+    code += `        view\n`;
+    code += `        returns (Element[] memory, StateMemory memory)\n`;
+    code += `    {\n`;
+    code += `        return (elements, currentMemory);\n`;
+    code += `    }\n\n`;
 
     return code;
   }
@@ -274,21 +338,21 @@ contract ${contractName} {
     const { type, element } = node;
 
     switch (type) {
-    case 'choreographyTask':
-      this.processChoreographyTask(element);
-      break;
-    case 'exclusiveGateway':
-      this.processGateway(element, 'exclusiveGateway');
-      break;
-    case 'parallelGateway':
-      this.processGateway(element, 'parallelGateway');
-      break;
-    case 'eventBasedGateway':
-      this.processGateway(element, 'eventBasedGateway');
-      break;
-    case 'endEvent':
-      this.processEndEvent(element);
-      break;
+      case 'choreographyTask':
+        this.processChoreographyTask(element);
+        break;
+      case 'exclusiveGateway':
+        this.processGateway(element, 'exclusiveGateway');
+        break;
+      case 'parallelGateway':
+        this.processGateway(element, 'parallelGateway');
+        break;
+      case 'eventBasedGateway':
+        this.processGateway(element, 'eventBasedGateway');
+        break;
+      case 'endEvent':
+        this.processEndEvent(element);
+        break;
     }
   }
 
@@ -327,15 +391,15 @@ contract ${contractName} {
     let name = gateway.name;
     if (!name) {
       switch (type) {
-      case 'exclusiveGateway':
-        name = `ExclusiveGateway_${this.xorCounter++}`;
-        break;
-      case 'parallelGateway':
-        name = `ParallelGateway_${this.parallelCounter++}`;
-        break;
-      case 'eventBasedGateway':
-        name = `EventBasedGateway_${this.eventBasedCounter++}`;
-        break;
+        case 'exclusiveGateway':
+          name = `ExclusiveGateway_${this.xorCounter++}`;
+          break;
+        case 'parallelGateway':
+          name = `ParallelGateway_${this.parallelCounter++}`;
+          break;
+        case 'eventBasedGateway':
+          name = `EventBasedGateway_${this.eventBasedCounter++}`;
+          break;
       }
     }
     this.addElement(gateway.id, 'internal', name);
@@ -418,15 +482,15 @@ contract ${contractName} {
   generateStartEventFunction(startEvent) {
     const id = startEvent.id;
     const outgoing = startEvent['bpmn2:outgoing'];
-    const nextId = this.findTargetId(outgoing);
+    const nextId = this.resolveNextElementId(outgoing); // <-- USA resolveNextElementId
 
     return `    function ${this.parseSid(id)}() private {
-        require(
-            elements[position["${id}"]].status == State.ENABLED
-        );
-        done("${id}");
-        enable("${nextId}");
-    }\n`;
+      require(
+          elements[position["${id}"]].status == State.ENABLED
+      );
+      done("${id}");
+      enable("${nextId}");
+  }\n`;
   }
 
   generateEndEventFunction(endEvent) {
@@ -461,7 +525,12 @@ contract ${contractName} {
   generateTaskFunction(task, message, messageFlow, optionalRoles, mandatoryRoles) {
     const functionName = message.name.split('(')[0];
     const params = this.extractParameters(message.name);
-    const paramsStr = params.map(p => `${p.type} memory ${p.name}`).join(', ');
+
+    // <-- MODIFICA: Aggiungi "memory" solo per tipi che lo richiedono
+    const paramsStr = params.map(p => {
+      const needsMemory = !['bytes32', 'uint', 'uint256', 'int', 'int256', 'bool', 'address'].includes(p.type);
+      return needsMemory ? `${p.type} memory ${p.name}` : `${p.type} ${p.name}`;
+    }).join(', ');
 
     const initiatingParticipant = this.participantsMap.get(task.initiatingParticipantRef);
     const roleIndex = mandatoryRoles.indexOf(initiatingParticipant);
@@ -474,9 +543,9 @@ contract ${contractName} {
 
     // Add guard if present
     if (message.guard) {
-      func += '        require(\n';
-      func += `            ${this.convertGuardToSolidity(message.guard)}\n`;
-      func += '        );\n\n';
+      func += `        require(\n`;
+      func += `            ${this.convertGuardToSolidity(message.guard, message.guardType)}\n`;
+      func += `        );\n\n`;
     }
 
     // Update state memory
@@ -486,20 +555,32 @@ contract ${contractName} {
 
     func += `        done("${message.id}");\n`;
 
-    // Find and enable next elements
-    const outgoing = task['bpmn2:outgoing'];
-    if (outgoing) {
-      const nextId = this.findTargetId(outgoing);
-      func += `        enable("${nextId}");\n`;
+    // LOGICA per determinare il prossimo elemento
+    const taskElement = task;
+    const messageFlowRefs = taskElement['bpmn2:messageFlowRef'];
+    const messageFlowArray = Array.isArray(messageFlowRefs) ?
+      messageFlowRefs : [messageFlowRefs];
 
-      // Call next function if it's a gateway or end event
-      const nextNode = this.allNodes.find(n => n.element.id === nextId);
-      if (nextNode && (nextNode.type.includes('Gateway') || nextNode.type === 'endEvent')) {
-        func += `        ${this.parseSid(nextId)}();\n`;
+    const isTopMessage = messageFlow.sourceRef === task.initiatingParticipantRef;
+
+    if (isTopMessage && messageFlowArray.length > 1) {
+      const bottomMessageId = this.getTaskMessageId(task.id, true);
+      func += `        enable("${bottomMessageId}");\n`;
+    }
+    else {
+      const outgoing = taskElement['bpmn2:outgoing'];
+      if (outgoing) {
+        const nextId = this.resolveNextElementId(outgoing);
+        func += `        enable("${nextId}");\n`;
+
+        const nextNode = this.allNodes.find(n => n.element.id === this.findTargetId(outgoing));
+        if (nextNode && (nextNode.type.includes('Gateway') || nextNode.type === 'endEvent')) {
+          func += `        ${this.parseSid(this.findTargetId(outgoing))}();\n`;
+        }
       }
     }
 
-    func += '    }\n\n';
+    func += `    }\n\n`;
 
     return func;
   }
@@ -509,54 +590,60 @@ contract ${contractName} {
     const name = gateway.name || id;
 
     let func = `    function ${this.parseSid(id)}() private {\n`;
-    func += '        require(\n';
+    func += `        require(\n`;
     func += `            elements[position["${id}"]].status ==\n`;
-    func += '                State.ENABLED\n';
-    func += '        );\n';
+    func += `                State.ENABLED\n`;
+    func += `        );\n`;
     func += `        done("${id}");\n`;
 
     const outgoing = gateway['bpmn2:outgoing'];
     const outgoingArray = Array.isArray(outgoing) ? outgoing : [outgoing];
 
     if (type === 'exclusiveGateway') {
-      func += this.generateExclusiveGatewayLogic(gateway, outgoingArray);
+      const guardType = gateway.guardType; // <-- AGGIUNGI QUESTO
+      func += this.generateExclusiveGatewayLogic(gateway, outgoingArray, guardType); // <-- PASSA guardType
     } else if (type === 'parallelGateway') {
       func += this.generateParallelGatewayLogic(gateway, outgoingArray);
     } else if (type === 'eventBasedGateway') {
       func += this.generateEventBasedGatewayLogic(gateway, outgoingArray);
     }
 
-    func += '    }\n\n';
+    func += `    }\n\n`;
 
     return func;
   }
 
-  generateExclusiveGatewayLogic(gateway, outgoingArray) {
+  generateExclusiveGatewayLogic(gateway, outgoingArray, guardType) {
     let logic = '';
     const sequenceFlows = this.findSequenceFlows(outgoingArray);
 
     sequenceFlows.forEach((flow, index) => {
-      const targetId = flow.targetRef;
+      const targetId = this.resolveNextElementId(flow.id);
       const condition = flow.name;
 
       if (condition) {
         const ifStatement = index === 0 ? 'if' : 'else if';
         logic += `        ${ifStatement} (\n`;
-        logic += `            ${this.convertGuardToSolidity(condition)}\n`;
-        logic += '        ) {\n';
+
+        // <-- MODIFICA QUI: passa guardType e gatewayId
+        logic += `            ${this.convertGuardToSolidity(condition, guardType, gateway.id)}\n`;
+
+        logic += `        ) {\n`;
         logic += `            enable("${targetId}");\n`;
 
-        const targetNode = this.allNodes.find(n => n.element.id === targetId);
+        const actualTargetId = flow.targetRef;
+        const targetNode = this.allNodes.find(n => n.element.id === actualTargetId);
         if (targetNode && (targetNode.type.includes('Gateway') || targetNode.type === 'endEvent')) {
-          logic += `            ${this.parseSid(targetId)}();\n`;
+          logic += `            ${this.parseSid(actualTargetId)}();\n`;
         }
 
-        logic += '        }\n';
+        logic += `        }\n`;
       } else {
         logic += `        enable("${targetId}");\n`;
-        const targetNode = this.allNodes.find(n => n.element.id === targetId);
+        const actualTargetId = flow.targetRef;
+        const targetNode = this.allNodes.find(n => n.element.id === actualTargetId);
         if (targetNode && (targetNode.type.includes('Gateway') || targetNode.type === 'endEvent')) {
-          logic += `        ${this.parseSid(targetId)}();\n`;
+          logic += `        ${this.parseSid(actualTargetId)}();\n`;
         }
       }
     });
@@ -572,7 +659,7 @@ contract ${contractName} {
     // Split gateway
     if (incomingArray.length === 1) {
       outgoingArray.forEach(outId => {
-        const targetId = this.findTargetId(outId);
+        const targetId = this.resolveNextElementId(outId); // <-- USA resolveNextElementId
         logic += `        enable("${targetId}");\n`;
 
         const targetNode = this.allNodes.find(n => n.element.id === targetId);
@@ -583,12 +670,12 @@ contract ${contractName} {
     }
     // Join gateway
     else {
-      logic += '        if( ';
+      logic += `        if( `;
       const conditions = incomingArray.map((incId, index) => {
         const sourceId = this.findSourceId(incId);
         return `elements[position["${sourceId}"]].status == State.DONE`;
       }).join(' && ');
-      logic += conditions + ' ) { \n';
+      logic += conditions + ` ) { \n`;
 
       outgoingArray.forEach(outId => {
         const targetId = this.findTargetId(outId);
@@ -600,7 +687,7 @@ contract ${contractName} {
         }
       });
 
-      logic += '        }\n';
+      logic += `        }\n`;
     }
 
     return logic;
@@ -610,7 +697,7 @@ contract ${contractName} {
     let logic = '';
 
     outgoingArray.forEach(outId => {
-      const targetId = this.findTargetId(outId);
+      const targetId = this.resolveNextElementId(outId); // <-- USA resolveNextElementId
       logic += `        enable("${targetId}");\n`;
     });
 
@@ -654,37 +741,107 @@ contract ${contractName} {
     return flow ? flow.sourceRef : null;
   }
 
-  convertGuardToSolidity(guard) {
-    // Handle environmental guards
-    if (guard.includes('.')) {
-      const parts = guard.split('.');
-      const location = parts[0];
-      const attribute = parts[1].split('==')[0];
-      const value = parts[1].split('==')[1];
+  convertGuardToSolidity(guard, guardType = null, gatewayId = null) {
+    // ============================================
+    // CASO 1: guardType="reachability"
+    // ============================================
+    if (guardType === 'reachability') {
+      const isTrueCondition = guard.includes('== true');
+      const isFalseCondition = guard.includes('== false');
 
-      if (value === 'false') {
-        return 'environmentContract.getAttribute(\n' +
-                    `                currentMemory.${location},\n` +
-                    `                "${attribute}"\n` +
-                    `            ) == bytes32("${value}")`;
-      } else {
-        return `environmentContract.getAttribute(currentMemory.${location}, "${attribute}") ${value}`;
+      if (isTrueCondition) {
+        return `environmentContract.isReachable("${gatewayId}") == true`;
+      } else if (isFalseCondition) {
+        return `environmentContract.isReachable("${gatewayId}") == false`;
+      }
+
+      return `environmentContract.isReachable("${gatewayId}") == true`;
+    }
+
+    // ============================================
+    // CASO 2: guardType="environmental"
+    // ============================================
+    if (guardType === 'environmental') {
+      // Pattern: location.attribute OPERATOR value
+      const patterns = [
+        { regex: /(\w+)\.(\w+)\s*==\s*(\d+)/, op: '==' },
+        { regex: /(\w+)\.(\w+)\s*>\s*(\d+)/, op: '>' },
+        { regex: /(\w+)\.(\w+)\s*<\s*(\d+)/, op: '<' },
+        { regex: /(\w+)\.(\w+)\s*>=\s*(\d+)/, op: '>=' },
+        { regex: /(\w+)\.(\w+)\s*<=\s*(\d+)/, op: '<=' },
+        { regex: /(\w+)\.(\w+)\s*!=\s*(\d+)/, op: '!=' }
+      ];
+
+      for (const pattern of patterns) {
+        const match = guard.match(pattern.regex);
+        if (match) {
+          const location = match[1];
+          const attribute = match[2];
+          const value = match[3];
+
+          // <-- MODIFICA: Converti il valore numerico in bytes32(uint256(...))
+          return `environmentContract.getAttribute(currentMemory.${location}, "${attribute}") ${pattern.op} bytes32(uint256(${value}))`;
+        }
+      }
+
+      // Pattern per valori stringa: location.attribute=="value"
+      const stringPattern = /(\w+)\.(\w+)\s*==\s*"([^"]+)"/;
+      const stringMatch = guard.match(stringPattern);
+      if (stringMatch) {
+        const location = stringMatch[1];
+        const attribute = stringMatch[2];
+        const value = stringMatch[3];
+
+        return `environmentContract.getAttribute(\n` +
+          `                currentMemory.${location},\n` +
+          `                "${attribute}"\n` +
+          `            ) == bytes32("${value}")`;
       }
     }
 
-    // Handle reachability guards
-    if (guard.includes('isReachable')) {
-      return `environmentContract.${guard}`;
+    // ============================================
+    // CASO 3: Guard sui messaggi (guards normali)
+    // ============================================
+
+    if (guard.includes('.')) {
+      const parts = guard.split('.');
+      const location = parts[0];
+      const rest = parts[1];
+
+      if (rest.includes('==')) {
+        const [attribute, value] = rest.split('==');
+
+        if (value === 'false' || value === '"false"') {
+          return `environmentContract.getAttribute(\n` +
+            `                currentMemory.${location},\n` +
+            `                "${attribute}"\n` +
+            `            ) == bytes32("false")`;
+        } else if (value === 'true' || value === '"true"') {
+          return `environmentContract.getAttribute(\n` +
+            `                currentMemory.${location},\n` +
+            `                "${attribute}"\n` +
+            `            ) == bytes32("true")`;
+        } else {
+          // <-- MODIFICA: Se è un numero, converti in bytes32(uint256(...))
+          const numericValue = parseInt(value);
+          if (!isNaN(numericValue)) {
+            return `environmentContract.getAttribute(currentMemory.${location}, "${attribute}") == bytes32(uint256(${numericValue}))`;
+          }
+          return `environmentContract.getAttribute(currentMemory.${location}, "${attribute}") == ${value}`;
+        }
+      }
     }
 
-    // Handle position guards
+    // ============================================
+    // CASO 4: Guard di posizione (position guards)
+    // ============================================
     if (guard.includes('isPosition')) {
       const match = guard.match(/isPosition\((.*?),\s*(.*?)\)/);
       if (match) {
         const participant = match[1].trim();
         const position = match[2].trim();
         return `environmentContract.getParticipantPosition("${participant}") ==\n` +
-                    `                "${position}"`;
+          `                "${position}"`;
       }
     }
 
@@ -703,35 +860,3 @@ contract ${contractName} {
     return sid.replace(/-/g, '_');
   }
 }
-
-// Export the translator
-module.exports = BPMNToSolidityTranslator;
-
-// Example usage:
-/*
-const translator = new BPMNToSolidityTranslator();
-
-const participantsConfig = {
-  "Citizen": "0xdBC004826C17F7f8938271fA64c11338b50eebf6",
-  "Operation Center": "0xdBC004826C17F7f8938271fA64c11338b50eebf6",
-  "Firefighters Team": "0xdBC004826C17F7f8938271fA64c11338b50eebf6",
-  "Ambulance": "0xdBC004826C17F7f8938271fA64c11338b50eebf6",
-  "Air Ambulance": "0xdBC004826C17F7f8938271fA64c11338b50eebf6"
-};
-
-const mandatoryRoles = [
-  "Citizen",
-  "Operation Center",
-  "Firefighters Team",
-  "Ambulance",
-  "Air Ambulance"
-];
-
-translator.translateBPMNFile('./choreography.bpmn', participantsConfig, [], mandatoryRoles)
-  .then(result => {
-    console.log(result.solidityCode);
-    // Save to file
-    require('fs').writeFileSync('./output.sol', result.solidityCode);
-  })
-  .catch(error => console.error(error));
-*/

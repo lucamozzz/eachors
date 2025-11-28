@@ -1,15 +1,18 @@
 import { JsonRpcProvider, Wallet, Contract } from 'ethers';
 import express from 'express';
 import cors from 'cors';
+import xml2js from 'xml2js';
+import fs from 'fs/promises';
 import bodyParser from 'body-parser';
 import { compileContract } from './deploy.js';
 import { updatePhysicalPlaces, updateLogicalPlaces, updateParticipantPath, updateReachables } from './env.js';
 import { updateEnv } from './update_env.js';
+import Translator from './translate.js';
 
 // TODO: substitute with actual provider URL
 // const provider = new JsonRpcProvider('http://localhost:7545');
-const provider = new JsonRpcProvider('http://host.docker.internal:7545');
-const wallet = new Wallet('0x2306563736f2448a1dd18fe8137c6a79c91589345741a874174141684240dc91', provider);
+// const provider = new JsonRpcProvider('http://host.docker.internal:7545');
+// const wallet = new Wallet('0x2306563736f2448a1dd18fe8137c6a79c91589345741a874174141684240dc91', provider);
 export let envContract = null;
 export let chorContract = null;
 
@@ -18,12 +21,41 @@ app.use(cors({ origin: 'http://localhost:9013' }));
 app.use(bodyParser.text({ type: 'application/xml' }));
 app.use(bodyParser.json());
 
-app.get('/deploy', (req, res) => {
+app.post('/deploy', async (req, res) => {
   try {
-    // TODO: questo deve essere già compilato
-    const envArtifact = compileContract('env.sol');
+    const { bpmnContent, envJson, myAddress } = req.body;
 
-    // TODO: translate chor from req, compile and send back
+    if (!bpmnContent || !envJson || !myAddress) {
+      return res.status(400).json({ success: false, error: 'Missing BPMN, ENV data, or address' });
+    }
+
+    await fs.writeFile('./models/chor.bpmn', bpmnContent.xml); // già stringa
+    await fs.writeFile('./models/env.json', JSON.stringify(envJson, null, 2));
+
+    // Estrai dinamicamente i partecipanti dal BPMN
+    const participantNames = await getParticipants('./models/chor.bpmn');
+
+    // Genera participantsConfig usando myAddress per tutti i partecipanti
+    const participantsConfig = {};
+    participantNames.forEach(name => {
+      participantsConfig[name] = myAddress;
+    });
+
+    // Tutti i partecipanti diventano mandatoryRoles
+    const mandatoryRoles = [...participantNames];
+
+    const translator = new Translator();
+    const result = await translator.translateBPMNFile(
+      './models/chor.bpmn',
+      participantsConfig,
+      [],
+      mandatoryRoles
+    );
+
+    const chorSolPath = './contracts/chor.sol';
+    await fs.writeFile(chorSolPath, result.solidityCode);
+
+    const envArtifact = compileContract('env.sol');
     const chorArtifact = compileContract('chor.sol');
 
     res.json({
@@ -35,11 +67,32 @@ app.get('/deploy', (req, res) => {
         chorBytecode: chorArtifact.bytecode
       }
     });
+
   } catch (err) {
     console.error(err);
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+async function getParticipants(filePath) {
+  const xmlContent = await fs.readFile(filePath, 'utf-8');
+  const parser = new xml2js.Parser({ explicitArray: false, mergeAttrs: true });
+  const result = await parser.parseStringPromise(xmlContent);
+
+  const choreography = result['bpmn2:definitions']['bpmn2:choreography'];
+  if (!choreography) return [];
+
+  const participants = choreography['bpmn2:participant'];
+  if (!participants) return [];
+
+  // Assicurati di avere un array
+  const participantArray = Array.isArray(participants) ? participants : [participants];
+
+  // Estrai solo i nomi
+  const names = participantArray.map(p => p.name);
+
+  return names;
+}
 
 app.post('/setContracts', (req, res) => {
   try {
@@ -49,8 +102,8 @@ app.post('/setContracts', (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing contract data' });
     }
 
-    envContract = new Contract(envAddress, envAbi, wallet);
-    chorContract = new Contract(chorAddress, chorAbi, wallet);
+    envContract = new Contract(envAddress, envAbi);
+    chorContract = new Contract(chorAddress, chorAbi);
 
     console.log('Contracts stored on backend:');
     console.log('ENV:', envAddress);
