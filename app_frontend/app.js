@@ -4,13 +4,12 @@ import ChoreoModeler from './chor-js/lib/Modeler.js';
 import PropertiesPanelModule from 'bpmn-js-properties-panel';
 import Reporter from './lib/validator/Validator.js';
 import PropertiesProviderModule from './lib/properties-provider/index.js';
-// import CustomTokenAnimationControls from './chor-js/lib/features/token-animation/CustomTokenAnimationControls';
 import xml from './diagrams/chor.bpmn';
 import env from './diagrams/env.json';
 import blank from './diagrams/blank.bpmn';
 import messageTypeModdle from './chor-js/extension.json';
 import TokenAnimationModule from './chor-js/lib/features/token-animation';
-import { ethers, encodeBytes32String, decodeBytes32String } from 'ethers';
+import { ethers, encodeBytes32String } from 'ethers';
 window.bpenvModeler = bpenvModeler;
 
 let lastFile;
@@ -377,10 +376,8 @@ async function getPhysicalPlaces(contract) {
 
     attributeKeys.forEach((key, j) => {
       const raw = attributeValues[i][j];
-      if (raw !== ethers.encodeBytes32String(' ')) {
-        attrs[ethers.decodeBytes32String(key)] =
-          ethers.decodeBytes32String(raw);
-      }
+      attrs[ethers.decodeBytes32String(key)] =
+        ethers.decodeBytes32String(raw);
     });
 
     return {
@@ -621,5 +618,41 @@ function showPopup(messageShape, onConfirm) {
   });
 }
 
+function startEnvironmentalMarkers(modeler) {
+
+  function getEnvironmentalGateways() {
+    return modeler.get('elementRegistry')
+      .filter(el => el.type === 'bpmn:ExclusiveGateway')
+      //  && el.businessObject.guardType === 'Environmental');
+  }
+
+  function getDomNode(id) {
+    return document.querySelector(`[data-element-id="${id}"]`);
+  }
+
+  function addMarker(dom) {
+    if (!dom || dom.querySelector('.env-marker')) return;
+
+    const svg = "http://www.w3.org/2000/svg";
+    const circle = document.createElementNS(svg, "circle");
+
+    circle.classList.add("env-marker");
+    circle.setAttribute("r", 6);
+    circle.setAttribute("cx", 30);
+    circle.setAttribute("cy", -30);
+
+    dom.appendChild(circle);
+  }
+
+  setInterval(() => {
+    getEnvironmentalGateways().forEach(g => {
+      console.log(g);
+      // addMarker(getDomNode(g.id));
+    });
+  }, 2000);
+}
+
+
 bpenvModeler.render('bpenv-container');
 renderModel(xml);
+startEnvironmentalMarkers(modeler);

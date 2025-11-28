@@ -72,9 +72,6 @@ contract Environment {
         for (uint i = 0; i < physicalPlaceKeys.length; i++) {
             bytes32 pk = physicalPlaceKeys[i];
             physicalPlaces[pk].exists = true;
-
-            for (uint j = 0; j < attributeKeys.length; j++)
-                physicalPlaces[pk].attributes[attributeKeys[j]] = bytes32(" ");
         }
     }
 
@@ -88,9 +85,6 @@ contract Environment {
             bytes32 id = _logicalPlaceKeys[i];
             logicalPlaces[id].exists = true;
             logicalPlaces[id].expression = _expressions[i];
-
-            for (uint j = 0; j < attributeKeys.length; j++)
-                logicalPlaces[id].attributes[attributeKeys[j]] = bytes32(" ");
         }
     }
 
