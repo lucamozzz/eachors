@@ -345,27 +345,17 @@ async function fetchCurrentState() {
     }));
     currentState.forEach(element => {
       if (!element || !element.ID) return;
-      const skipPrefixes = [
-        'StartEvent',
-        'ParallelGateway',
-        'EventBasedGateway',
-        'ExclusiveGateway',
-        'EndEvent'
-      ];
-
-      // TODO: remove when translation is implemented
-      if (skipPrefixes.some(prefix => element.ID.startsWith(prefix))) return;
 
       switch (element.status) {
-        case 'DONE':
-          tokenAnimation.colorElement(element.ID, 'green');
-          break;
-        case 'ENABLED':
-          tokenAnimation.colorElement(element.ID, 'yellow');
-          break;
-        case 'DISABLED':
-          tokenAnimation.colorElement(element.ID, 'red');
-          break;
+      case 'DONE':
+        tokenAnimation.colorElement(element.ID, 'green');
+        break;
+      case 'ENABLED':
+        tokenAnimation.colorElement(element.ID, 'yellow');
+        break;
+      case 'DISABLED':
+        tokenAnimation.colorElement(element.ID, 'red');
+        break;
       }
     });
   } catch (err) {

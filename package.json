@@ -50,6 +50,7 @@
     "chor-js": "^0.7.1",
     "cors": "^2.8.5",
     "deploy.js": "^0.0.4",
+    "dotenv": "^17.2.3",
     "ethers": "^6.15.0",
     "express": "^5.1.0",
     "inherits": "^2.0.4",

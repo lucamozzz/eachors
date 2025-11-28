@@ -8,11 +8,12 @@ import { compileContract } from './deploy.js';
 import { updatePhysicalPlaces, updateLogicalPlaces, updateParticipantPath, updateReachables } from './env.js';
 import { updateEnv } from './update_env.js';
 import Translator from './translate.js';
+import dotenv from 'dotenv';
+dotenv.config();
 
-// TODO: substitute with actual provider URL
-// const provider = new JsonRpcProvider('http://localhost:7545');
-// const provider = new JsonRpcProvider('http://host.docker.internal:7545');
-// const wallet = new Wallet('0x2306563736f2448a1dd18fe8137c6a79c91589345741a874174141684240dc91', provider);
+const provider = new JsonRpcProvider(process.env.RPC_URL);
+const wallet = new Wallet(process.env.PRIVATE_KEY, provider);
+
 export let envContract = null;
 export let chorContract = null;
 
@@ -102,8 +103,8 @@ app.post('/setContracts', (req, res) => {
       return res.status(400).json({ success: false, error: 'Missing contract data' });
     }
 
-    envContract = new Contract(envAddress, envAbi);
-    chorContract = new Contract(chorAddress, chorAbi);
+    envContract = new Contract(envAddress, envAbi, wallet);
+    chorContract = new Contract(chorAddress, chorAbi, wallet);
 
     console.log('Contracts stored on backend:');
     console.log('ENV:', envAddress);
