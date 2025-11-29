@@ -70,9 +70,9 @@ contract chor {
         "Gateway_1kjkyo0",
         "Gateway_0e8fc2j",
         "Gateway_1hxmsvl",
-        "Gateway_07lf73r",
+        "Gateway_07lf73r_env",
         "Gateway_0bep7fg",
-        "Gateway_0seo2yk"
+        "Gateway_0seo2yk_rea"
     ];
     string[] roleList = [
         "Citizen",
@@ -340,17 +340,17 @@ contract chor {
         );
         done("Gateway_1hxmsvl");
         enable("fireExtinguished");
-        enable("Gateway_07lf73r");
-        Gateway_07lf73r();
+        enable("Gateway_07lf73r_env");
+        Gateway_07lf73r_env();
     }
 
 
-    function Gateway_07lf73r() private {
+    function Gateway_07lf73r_env() private {
         require(
-            elements[position["Gateway_07lf73r"]].status ==
+            elements[position["Gateway_07lf73r_env"]].status ==
                 State.ENABLED
         );
-        done("Gateway_07lf73r");
+        done("Gateway_07lf73r_env");
         if (
             environmentContract.getAttribute(currentMemory.fireSite, "people") == bytes32(uint256(0))
         ) {
@@ -360,8 +360,8 @@ contract chor {
         else if (
             environmentContract.getAttribute(currentMemory.fireSite, "people") > bytes32(uint256(0))
         ) {
-            enable("Gateway_0seo2yk");
-            Gateway_0seo2yk();
+            enable("Gateway_0seo2yk_rea");
+            Gateway_0seo2yk_rea();
         }
     }
 
@@ -377,19 +377,19 @@ contract chor {
     }
 
 
-    function Gateway_0seo2yk() private {
+    function Gateway_0seo2yk_rea() private {
         require(
-            elements[position["Gateway_0seo2yk"]].status ==
+            elements[position["Gateway_0seo2yk_rea"]].status ==
                 State.ENABLED
         );
-        done("Gateway_0seo2yk");
+        done("Gateway_0seo2yk_rea");
         if (
-            environmentContract.isReachable("Gateway_0seo2yk") == false
+            environmentContract.isReachable("Gateway_0seo2yk_rea") == false
         ) {
             enable("rescueLocationA");
         }
         else if (
-            environmentContract.isReachable("Gateway_0seo2yk") == true
+            environmentContract.isReachable("Gateway_0seo2yk_rea") == true
         ) {
             enable("rescueLocationG");
         }

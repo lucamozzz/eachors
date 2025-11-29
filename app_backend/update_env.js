@@ -7,7 +7,7 @@ async function buildPhysicalPlacesArgs(env) {
   const attributeValuesList = [];
 
   for (const place of env.physicalPlaces) {
-    ids.push(place.id);
+    ids.push(place.name);
 
     const keys = [];
     const values = [];
@@ -25,12 +25,11 @@ async function buildPhysicalPlacesArgs(env) {
 
 async function buildLogicalPlacesArgs(env) {
   const ids = [];
-  const updatedPlacesList = [];
   const attributeKeysList = [];
   const attributeValuesList = [];
 
   for (const lp of env.logicalPlaces) {
-    ids.push(lp.id);
+    ids.push(lp.name);
 
     const keys = [];
     const values = [];
@@ -40,27 +39,6 @@ async function buildLogicalPlacesArgs(env) {
     }
     attributeKeysList.push(keys);
     attributeValuesList.push(values);
-
-    const matchingPhysicalPlaces = env.physicalPlaces.filter(pp => {
-      return lp.conditions.every(cond => {
-        const attrValue = pp.attributes[cond.attribute];
-        if (attrValue === undefined) return false;
-
-        switch (cond.operator) {
-        case '==':
-          return String(attrValue) === String(cond.value);
-        case '>':
-          return Number(attrValue) > Number(cond.value);
-        case '<':
-          return Number(attrValue) < Number(cond.value);
-        default:
-          return false;
-        }
-      });
-    });
-
-    const physicalPlaceIds = matchingPhysicalPlaces.map(pp => pp.id);
-    updatedPlacesList.push(physicalPlaceIds);
   }
 
   return [ids, attributeKeysList, attributeValuesList];
@@ -75,7 +53,7 @@ export async function updateEnv(envContract) {
     ['FireDepartment']
   ];
   const updateReachablesArgs = [
-    ['ExclusiveGateway_0seo2yk'],
+    ['Gateway_0seo2yk_rea'],
     [true]
   ];
 

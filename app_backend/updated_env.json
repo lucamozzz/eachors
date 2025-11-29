@@ -803,7 +803,7 @@
       ],
       "attributes": {
         "fire": false,
-        "people": "0",
+        "people": "2",
         "type": "building",
         "district": "D"
       }
@@ -1196,7 +1196,7 @@
       ],
       "operator": "AND",
       "attributes": {
-        "people": 0,
+        "people": "2",
         "fire": "false"
       }
     },

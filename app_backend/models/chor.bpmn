@@ -62,7 +62,7 @@
       <bpmn2:outgoing>Flow_0v9bbr8</bpmn2:outgoing>
       <bpmn2:outgoing>Flow_1jfekel</bpmn2:outgoing>
     </bpmn2:parallelGateway>
-    <bpmn2:exclusiveGateway id="Gateway_07lf73r" guardType="environmental">
+    <bpmn2:exclusiveGateway id="Gateway_07lf73r_env" guardType="environmental">
       <bpmn2:incoming>Flow_1jfekel</bpmn2:incoming>
       <bpmn2:outgoing>Flow_0cez3v3</bpmn2:outgoing>
       <bpmn2:outgoing>Flow_1js84zc</bpmn2:outgoing>
@@ -112,7 +112,7 @@
     <bpmn2:sequenceFlow id="Flow_1o2k91j" sourceRef="ChoreographyTask_02kz3z0" targetRef="Event_0784xir" />
     <bpmn2:sequenceFlow id="Flow_1hzmusk" sourceRef="ChoreographyTask_0tyevyu" targetRef="Gateway_1hxmsvl" />
     <bpmn2:sequenceFlow id="Flow_0v9bbr8" sourceRef="Gateway_1hxmsvl" targetRef="ChoreographyTask_0g24pb4" />
-    <bpmn2:sequenceFlow id="Flow_1jfekel" sourceRef="Gateway_1hxmsvl" targetRef="Gateway_07lf73r" />
+    <bpmn2:sequenceFlow id="Flow_1jfekel" sourceRef="Gateway_1hxmsvl" targetRef="Gateway_07lf73r_env" />
     <bpmn2:choreographyTask id="ChoreographyTask_12t2z00" name="Call on emergency" initiatingParticipantRef="Participant_06qakjv">
       <bpmn2:incoming>Flow_1yh9iv1</bpmn2:incoming>
       <bpmn2:outgoing>Flow_1kzfyy2</bpmn2:outgoing>
@@ -161,7 +161,7 @@
     </bpmn2:choreographyTask>
     <bpmn2:sequenceFlow id="Flow_1jwab35" sourceRef="ChoreographyTask_0dmchh6" targetRef="ChoreographyTask_0sfvcaa" />
     <bpmn2:sequenceFlow id="Flow_174ga2p" sourceRef="Gateway_0bep7fg" targetRef="Event_09bowto" />
-    <bpmn2:sequenceFlow id="Flow_0cez3v3" name="fireSite.people==0" sourceRef="Gateway_07lf73r" targetRef="Gateway_0bep7fg" />
+    <bpmn2:sequenceFlow id="Flow_0cez3v3" name="fireSite.people==0" sourceRef="Gateway_07lf73r_env" targetRef="Gateway_0bep7fg" />
     <bpmn2:choreographyTask id="ChoreographyTask_0sfvcaa" name="Send rescue report" initiatingParticipantRef="Participant_0ze32ac">
       <bpmn2:incoming>Flow_1jwab35</bpmn2:incoming>
       <bpmn2:outgoing>Flow_07eorij</bpmn2:outgoing>
@@ -169,14 +169,14 @@
       <bpmn2:participantRef>Participant_16nn52w</bpmn2:participantRef>
       <bpmn2:messageFlowRef>MessageFlow_0gv8n63</bpmn2:messageFlowRef>
     </bpmn2:choreographyTask>
-    <bpmn2:exclusiveGateway id="Gateway_0seo2yk" guardType="reachability">
+    <bpmn2:exclusiveGateway id="Gateway_0seo2yk_rea" guardType="reachability">
       <bpmn2:incoming>Flow_1js84zc</bpmn2:incoming>
       <bpmn2:outgoing>Flow_0ghtnuo</bpmn2:outgoing>
       <bpmn2:outgoing>Flow_1553r3p</bpmn2:outgoing>
     </bpmn2:exclusiveGateway>
-    <bpmn2:sequenceFlow id="Flow_0ghtnuo" name="isReachable(Ambulance.place, fireSite,steepness==&#34;low&#34;) == false" sourceRef="Gateway_0seo2yk" targetRef="ChoreographyTask_0dmchh6" />
-    <bpmn2:sequenceFlow id="Flow_1553r3p" name="isReachable(Ambulance.place, fireSite,steepness==&#34;low&#34;) == true" sourceRef="Gateway_0seo2yk" targetRef="ChoreographyTask_0vzidh8" />
-    <bpmn2:sequenceFlow id="Flow_1js84zc" name="fireSite.people &#62; 0" sourceRef="Gateway_07lf73r" targetRef="Gateway_0seo2yk" />
+    <bpmn2:sequenceFlow id="Flow_0ghtnuo" name="isReachable(Ambulance.place, fireSite,steepness==&#34;low&#34;) == false" sourceRef="Gateway_0seo2yk_rea" targetRef="ChoreographyTask_0dmchh6" />
+    <bpmn2:sequenceFlow id="Flow_1553r3p" name="isReachable(Ambulance.place, fireSite,steepness==&#34;low&#34;) == true" sourceRef="Gateway_0seo2yk_rea" targetRef="ChoreographyTask_0vzidh8" />
+    <bpmn2:sequenceFlow id="Flow_1js84zc" name="fireSite.people &#62; 0" sourceRef="Gateway_07lf73r_env" targetRef="Gateway_0seo2yk_rea" />
     <bpmn2:sequenceFlow id="Flow_1h274ok" sourceRef="ChoreographyTask_0vzidh8" targetRef="ChoreographyTask_0yz66uv" />
     <bpmn2:sequenceFlow id="Flow_07eorij" sourceRef="ChoreographyTask_0sfvcaa" targetRef="Gateway_0bep7fg" />
     <bpmn2:sequenceFlow id="Flow_1vcv55u" sourceRef="ChoreographyTask_0yz66uv" targetRef="Gateway_0bep7fg" />
@@ -219,7 +219,7 @@
       <bpmndi:BPMNShape id="Gateway_1hxmsvl_di" bpmnElement="Gateway_1hxmsvl">
         <dc:Bounds x="645" y="135" width="50" height="50" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_07lf73r_di" bpmnElement="Gateway_07lf73r" isMarkerVisible="true">
+      <bpmndi:BPMNShape id="Gateway_07lf73r_di" bpmnElement="Gateway_07lf73r_env" isMarkerVisible="true">
         <dc:Bounds x="645" y="305" width="50" height="50" />
       </bpmndi:BPMNShape>
       <bpmndi:BPMNShape id="ChoreographyTask_0vzidh8_di" bpmnElement="ChoreographyTask_0vzidh8">
@@ -403,7 +403,7 @@
       <bpmndi:BPMNShape id="BPMNShape_0rcn3l7" bpmnElement="Participant_16nn52w" isMessageVisible="false" participantBandKind="bottom_non_initiating" choreographyActivityShape="ChoreographyTask_0sfvcaa_di">
         <dc:Bounds x="1000" y="790" width="100" height="20" />
       </bpmndi:BPMNShape>
-      <bpmndi:BPMNShape id="Gateway_0seo2yk_di" bpmnElement="Gateway_0seo2yk" isMarkerVisible="true">
+      <bpmndi:BPMNShape id="Gateway_0seo2yk_di" bpmnElement="Gateway_0seo2yk_rea" isMarkerVisible="true">
         <dc:Bounds x="645" y="465" width="50" height="50" />
         <bpmndi:BPMNLabel>
           <dc:Bounds x="2017" y="2476" width="87" height="27" />

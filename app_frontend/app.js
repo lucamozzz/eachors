@@ -10,6 +10,7 @@ import blank from './diagrams/blank.bpmn';
 import messageTypeModdle from './chor-js/extension.json';
 import TokenAnimationModule from './chor-js/lib/features/token-animation';
 import { ethers, encodeBytes32String } from 'ethers';
+import { create as svgCreate, attr as svgAttr } from 'tiny-svg';
 window.bpenvModeler = bpenvModeler;
 
 let lastFile;
@@ -289,9 +290,9 @@ document.getElementById('js-deploy').addEventListener('click', async () => {
     const envC = await EnvFactory.deploy(
       Array.from(new Set(env.physicalPlaces.flatMap(p => Object.keys(p.attributes))))
         .map(ethers.encodeBytes32String),
-      env.physicalPlaces.map(p => ethers.encodeBytes32String(p.id)),
-      env.edges.map(e => ethers.encodeBytes32String(e.source.split('_')[1] + '_' + e.target.split('_')[1])),
-      env.logicalPlaces.map(lp => ethers.encodeBytes32String(lp.id)),
+      env.physicalPlaces.map(p => ethers.encodeBytes32String(p.name)),
+      env.edges.map(e => ethers.encodeBytes32String(e.name)),
+      env.logicalPlaces.map(lp => ethers.encodeBytes32String(lp.name)),
       env.logicalPlaces.map(lp => lp.conditions.map(c => `${c.attribute} ${c.operator} ${c.value}`).join(` ${lp.operator} `)),
       env.views.map(v => ethers.encodeBytes32String(v.id)),
       env.views.map(v => v.logicalPlaces.map(ethers.encodeBytes32String)),
@@ -346,15 +347,15 @@ async function fetchCurrentState() {
       if (!element || !element.ID) return;
 
       switch (element.status) {
-      case 'DONE':
-        tokenAnimation.colorElement(element.ID, 'green');
-        break;
-      case 'ENABLED':
-        tokenAnimation.colorElement(element.ID, 'yellow');
-        break;
-      case 'DISABLED':
-        tokenAnimation.colorElement(element.ID, 'red');
-        break;
+        case 'DONE':
+          tokenAnimation.colorElement(element.ID, 'green');
+          break;
+        case 'ENABLED':
+          tokenAnimation.colorElement(element.ID, 'yellow');
+          break;
+        case 'DISABLED':
+          tokenAnimation.colorElement(element.ID, 'red');
+          break;
       }
     });
   } catch (err) {
@@ -400,7 +401,7 @@ async function refreshPhysicalPlaces() {
 
     // Merge dei nuovi valori
     const merged = oldPlaces.map(old => {
-      const updated = updatedPlaces.find(p => p.id === old.id);
+      const updated = updatedPlaces.find(p => p.name === old.name);
       return updated ? { ...old, attributes: updated.attributes } : old;
     });
 
@@ -620,38 +621,56 @@ function showPopup(messageShape, onConfirm) {
 
 function startEnvironmentalMarkers(modeler) {
 
-  function getEnvironmentalGateways() {
+  function getExclusiveGateways() {
     return modeler.get('elementRegistry')
-      .filter(el => el.type === 'bpmn:ExclusiveGateway')
-      //  && el.businessObject.guardType === 'Environmental');
+      .filter(el => el.type === 'bpmn:ExclusiveGateway');
   }
 
   function getDomNode(id) {
     return document.querySelector(`[data-element-id="${id}"]`);
   }
 
-  function addMarker(dom) {
-    if (!dom || dom.querySelector('.env-marker')) return;
-
-    const svg = "http://www.w3.org/2000/svg";
-    const circle = document.createElementNS(svg, "circle");
-
-    circle.classList.add("env-marker");
-    circle.setAttribute("r", 6);
-    circle.setAttribute("cx", 30);
-    circle.setAttribute("cy", -30);
-
-    dom.appendChild(circle);
+  function clearOldMarkers(dom) {
+    dom.querySelectorAll('.env-marker').forEach(n => n.remove());
   }
 
-  setInterval(() => {
-    getEnvironmentalGateways().forEach(g => {
-      console.log(g);
-      // addMarker(getDomNode(g.id));
-    });
-  }, 2000);
-}
+  function createGuardTypeIconFromId(id) {
+    let href;
+    if (id.endsWith('_env')) {
+      href = require('./icons/environmental.svg');
+    } else if (id.endsWith('_pos')) {
+      href = require('./icons/position.svg');
+    } else if (id.endsWith('_rea')) {
+      href = require('./icons/reachability.svg');
+    } else {
+      return null;
+    }
 
+    const img = svgCreate('image');
+    svgAttr(img, { width: 30, height: 30 });
+    svgAttr(img, { x: -20, y: -20 });
+    svgAttr(img, { href }); // moderno
+    img.setAttributeNS('http://www.w3.org/1999/xlink', 'xlink:href', href); // legacy
+    img.classList.add('env-marker');
+    return img;
+  }
+
+  function updateMarkers() {
+    getExclusiveGateways().forEach(g => {
+      const dom = getDomNode(g.id);
+      if (!dom) return;
+
+      clearOldMarkers(dom);
+
+      const icon = createGuardTypeIconFromId(g.businessObject.id);
+      if (icon) {
+        dom.appendChild(icon);
+      }
+    });
+  }
+
+  setInterval(updateMarkers, 1000);
+}
 
 bpenvModeler.render('bpenv-container');
 renderModel(xml);
