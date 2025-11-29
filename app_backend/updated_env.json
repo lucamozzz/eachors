@@ -506,8 +506,8 @@
         ]
       ],
       "attributes": {
-        "fire": "true",
-        "people": "2",
+        "fire": "false",
+        "people": 0,
         "type": "building",
         "district": "D"
       }
@@ -534,8 +534,8 @@
         ]
       ],
       "attributes": {
-        "fire": "true",
-        "people": "3",
+        "fire": false,
+        "people": 0,
         "type": "building",
         "district": "D"
       }
@@ -630,7 +630,7 @@
         ]
       ],
       "attributes": {
-        "fire": "false",
+        "fire": false,
         "people": 0,
         "type": "building",
         "district": "C"
@@ -802,7 +802,7 @@
         ]
       ],
       "attributes": {
-        "fire": "true",
+        "fire": false,
         "people": "0",
         "type": "building",
         "district": "D"
@@ -812,252 +812,252 @@
   "edges": [
     {
       "id": "Edge_00i6hlrzrryyo",
-      "name": "Edge_00i6hlrzrryyo",
+      "name": "Hospital>S1",
       "source": "Hospital",
       "target": "Place_2t1nio15h0l",
       "attributes": []
     },
     {
       "id": "Edge_9d7aplyyl7m",
-      "name": "Edge_9d7aplyyl7m",
+      "name": "S1>Hospital",
       "source": "Place_2t1nio15h0l",
       "target": "Hospital",
       "attributes": []
     },
     {
       "id": "Edge_bgmf5nw947j",
-      "name": "Edge_bgmf5nw947j",
+      "name": "S1>S2",
       "source": "Place_2t1nio15h0l",
       "target": "Place_23e1wcpaxsd",
       "attributes": []
     },
     {
       "id": "Edge_yv7sd3zwtj",
-      "name": "Edge_yv7sd3zwtj",
+      "name": "S2>S1",
       "source": "Place_23e1wcpaxsd",
       "target": "Place_2t1nio15h0l",
       "attributes": []
     },
     {
       "id": "Edge_my5aemu6it",
-      "name": "Edge_my5aemu6it",
+      "name": "S2>S3",
       "source": "Place_23e1wcpaxsd",
       "target": "Place_ets25yy34qt",
       "attributes": []
     },
     {
       "id": "Edge_wryoqfx07s",
-      "name": "Edge_wryoqfx07s",
+      "name": "S3>S2",
       "source": "Place_ets25yy34qt",
       "target": "Place_23e1wcpaxsd",
       "attributes": []
     },
     {
       "id": "Edge_88z5zjoty9p",
-      "name": "Edge_88z5zjoty9p",
+      "name": "S3>FireDepartment",
       "source": "Place_ets25yy34qt",
       "target": "FireDepartment",
       "attributes": []
     },
     {
       "id": "Edge_f0v6y0dk12w",
-      "name": "Edge_f0v6y0dk12w",
+      "name": "FireDepartment>S3",
       "source": "FireDepartment",
       "target": "Place_ets25yy34qt",
       "attributes": []
     },
     {
       "id": "Edge_4r6hwp0jmv3",
-      "name": "Edge_4r6hwp0jmv3",
+      "name": "S3>S4",
       "source": "Place_ets25yy34qt",
       "target": "Place_s3iujknl82q",
       "attributes": []
     },
     {
       "id": "Edge_whrx88ewu6",
-      "name": "Edge_whrx88ewu6",
+      "name": "S4>S3",
       "source": "Place_s3iujknl82q",
       "target": "Place_ets25yy34qt",
       "attributes": []
     },
     {
       "id": "Edge_f1zi7tib2ef",
-      "name": "Edge_f1zi7tib2ef",
+      "name": "S4>S5",
       "source": "Place_s3iujknl82q",
       "target": "Place_ejbu4eh8zz4",
       "attributes": []
     },
     {
       "id": "Edge_1iry2r3uely",
-      "name": "Edge_1iry2r3uely",
+      "name": "S5>S4",
       "source": "Place_ejbu4eh8zz4",
       "target": "Place_s3iujknl82q",
       "attributes": []
     },
     {
       "id": "Edge_ba5awz6nbwh",
-      "name": "Edge_ba5awz6nbwh",
+      "name": "S5>B1",
       "source": "Place_ejbu4eh8zz4",
       "target": "Place_2a2q8gqeou4",
       "attributes": []
     },
     {
       "id": "Edge_i2hw0qp6nx",
-      "name": "Edge_i2hw0qp6nx",
+      "name": "B1>S5",
       "source": "Place_2a2q8gqeou4",
       "target": "Place_ejbu4eh8zz4",
       "attributes": []
     },
     {
       "id": "Edge_el1dt290b3s",
-      "name": "Edge_el1dt290b3s",
+      "name": "S5>B3",
       "source": "Place_ejbu4eh8zz4",
       "target": "Place_ak9s35xvlkr",
       "attributes": []
     },
     {
       "id": "Edge_wnryvmpltkj",
-      "name": "Edge_wnryvmpltkj",
+      "name": "B3>S5",
       "source": "Place_ak9s35xvlkr",
       "target": "Place_ejbu4eh8zz4",
       "attributes": []
     },
     {
       "id": "Edge_13u3xphc0akg",
-      "name": "Edge_13u3xphc0akg",
+      "name": "S5>B2",
       "source": "Place_ejbu4eh8zz4",
       "target": "Place_biosyvk14zl",
       "attributes": []
     },
     {
       "id": "Edge_xchedrzeu3c",
-      "name": "Edge_xchedrzeu3c",
+      "name": "B2>S5",
       "source": "Place_biosyvk14zl",
       "target": "Place_ejbu4eh8zz4",
       "attributes": []
     },
     {
       "id": "Edge_idnffo2w2k",
-      "name": "Edge_idnffo2w2k",
+      "name": "S5>S7",
       "source": "Place_ejbu4eh8zz4",
       "target": "Place_j7bsof3y1v8",
       "attributes": []
     },
     {
       "id": "Edge_xho0giyiptp",
-      "name": "Edge_xho0giyiptp",
+      "name": "S7>S5",
       "source": "Place_j7bsof3y1v8",
       "target": "Place_ejbu4eh8zz4",
       "attributes": []
     },
     {
       "id": "Edge_lqyqvhppohq",
-      "name": "Edge_lqyqvhppohq",
+      "name": "S5>S6",
       "source": "Place_ejbu4eh8zz4",
       "target": "Place_efjt3h683m",
       "attributes": []
     },
     {
       "id": "Edge_b7u3jm9gcjd",
-      "name": "Edge_b7u3jm9gcjd",
+      "name": "S6>S5",
       "source": "Place_efjt3h683m",
       "target": "Place_ejbu4eh8zz4",
       "attributes": []
     },
     {
       "id": "Edge_oph3gsupuvj",
-      "name": "Edge_oph3gsupuvj",
+      "name": "B5>S6",
       "source": "Place_4nuck7cobss",
       "target": "Place_efjt3h683m",
       "attributes": []
     },
     {
       "id": "Edge_cz92cbm1dxl",
-      "name": "Edge_cz92cbm1dxl",
+      "name": "S6>B5",
       "source": "Place_efjt3h683m",
       "target": "Place_4nuck7cobss",
       "attributes": []
     },
     {
       "id": "Edge_1nuz3d8c8sz",
-      "name": "Edge_1nuz3d8c8sz",
+      "name": "B4>S6",
       "source": "Place_5r81430078t",
       "target": "Place_efjt3h683m",
       "attributes": []
     },
     {
       "id": "Edge_51rr6vaqow5",
-      "name": "Edge_51rr6vaqow5",
+      "name": "S6>B4",
       "source": "Place_efjt3h683m",
       "target": "Place_5r81430078t",
       "attributes": []
     },
     {
       "id": "Edge_li4upo29wjr",
-      "name": "Edge_li4upo29wjr",
+      "name": "S6>B7",
       "source": "Place_efjt3h683m",
       "target": "Place_bu9ryod4kq",
       "attributes": []
     },
     {
       "id": "Edge_j5ydrlziwdr",
-      "name": "Edge_j5ydrlziwdr",
+      "name": "B7>S6",
       "source": "Place_bu9ryod4kq",
       "target": "Place_efjt3h683m",
       "attributes": []
     },
     {
       "id": "Edge_edax8znofel",
-      "name": "Edge_edax8znofel",
+      "name": "B7>B8",
       "source": "Place_bu9ryod4kq",
       "target": "Place_apjmv0r685",
       "attributes": []
     },
     {
       "id": "Edge_saflax22gel",
-      "name": "Edge_saflax22gel",
+      "name": "B8>B7",
       "source": "Place_apjmv0r685",
       "target": "Place_bu9ryod4kq",
       "attributes": []
     },
     {
       "id": "Edge_ex1zkze11i",
-      "name": "Edge_ex1zkze11i",
+      "name": "B7>S8",
       "source": "Place_bu9ryod4kq",
       "target": "Place_ergqy214mx5",
       "attributes": []
     },
     {
       "id": "Edge_huh1w8c5sc",
-      "name": "Edge_huh1w8c5sc",
+      "name": "S8>B7",
       "source": "Place_ergqy214mx5",
       "target": "Place_bu9ryod4kq",
       "attributes": []
     },
     {
       "id": "Edge_52zbpgcnh9c",
-      "name": "Edge_52zbpgcnh9c",
+      "name": "S8>S7",
       "source": "Place_ergqy214mx5",
       "target": "Place_j7bsof3y1v8",
       "attributes": []
     },
     {
       "id": "Edge_w5re2wnks3",
-      "name": "Edge_w5re2wnks3",
+      "name": "S7>S8",
       "source": "Place_j7bsof3y1v8",
       "target": "Place_ergqy214mx5",
       "attributes": []
     },
     {
       "id": "Edge_r9zr7i6u49m",
-      "name": "Edge_r9zr7i6u49m",
+      "name": "B6>S7",
       "source": "Place_n7o9xsr48o",
       "target": "Place_j7bsof3y1v8",
       "attributes": []
     },
     {
       "id": "Edge_nc5cki88u4f",
-      "name": "Edge_nc5cki88u4f",
+      "name": "S7>B6",
       "source": "Place_j7bsof3y1v8",
       "target": "Place_n7o9xsr48o",
       "attributes": []
