@@ -62,7 +62,6 @@ app.post('/deploy', async (req, res) => {
     const output = JSON.parse(solc.compile(JSON.stringify(input)));
 
     if (output.errors && output.errors.length > 0) {
-      // Controlla gli errori di compilazione
       const errors = output.errors.filter(e => e.severity === 'error');
       if (errors.length > 0) {
         return res.status(400).json({ success: false, error: errors.map(e => e.formattedMessage).join('\n') });
@@ -75,7 +74,7 @@ app.post('/deploy', async (req, res) => {
     const bytecode = contract.evm.bytecode.object;
 
     // Configura web3 e Ganache
-    const web3 = new Web3('http://127.0.0.1:7545');
+    const web3 = new Web3('http://127.0.0.1:7545'); // Assicurati che la porta sia quella giusta di Ganache
     const accounts = await web3.eth.getAccounts();
     const deployAccount = accounts[0];
 
@@ -87,7 +86,13 @@ app.post('/deploy', async (req, res) => {
 
     console.log('Contract deployed at:', deployed.options.address);
 
-    return res.json({ success: true, contractAddress: deployed.options.address });
+    // 🔴 Aggiunto "abi" alla risposta
+    return res.json({ 
+        success: true, 
+        contractAddress: deployed.options.address,
+        abi: abi 
+    });
+
   } catch (err) {
     console.error('Deploy error:', err);
     return res.status(500).json({ success: false, error: err.message });

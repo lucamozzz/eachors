@@ -1,23 +1,34 @@
 /* highlight giallo (in attesa) */
-.highlight-yellow rect {
+.highlight-yellow rect,
+.highlight-yellow path,
+.highlight-yellow circle,
+.highlight-yellow polygon {
   stroke: yellow !important;
   fill: rgba(255, 255, 0, 0.3) !important;
   transition: fill 0.3s ease, stroke 0.3s ease;
 }
 
-/* highlight verde (confermato) */
-.highlight-green rect {
+/* highlight verde (confermato/enabled) */
+.highlight-green rect,
+.highlight-green path,
+.highlight-green circle,
+.highlight-green polygon {
   stroke: green !important;
   fill: rgba(0, 255, 0, 0.25) !important;
   transition: fill 0.3s ease, stroke 0.3s ease;
 }
 
-/* highlight rosso (rifiutato / NO) */
-.highlight-red rect {
+/* highlight rosso (finito/done) */
+.highlight-red rect,
+.highlight-red path,
+.highlight-red circle,
+.highlight-red polygon {
   stroke: red !important;
   fill: rgba(255, 0, 0, 0.15) !important;
   transition: fill 0.3s ease, stroke 0.3s ease;
 }
+
+/* ... lascia pure il resto del CSS per il popup invariato ... */
 
 /* popup base */
 .token-popup {

@@ -114,11 +114,12 @@ contract ${this.model.processName} {
       position[elementsID[i]] = i;
     }
 
-    // Roles definition
+    // Roles definition: Assegna tutti i ruoli a chi fa il deploy (msg.sender) per i test
 `;
     roles.forEach(role => {
-  result += `    roles["${role}"] = payable(0x7A224d367EB99e849dC80F3d7b9FAC9E03Fe8Be0);\n`;
-      });
+      // 🔑 MODIFICA QUI: Usa msg.sender invece dell'indirizzo fisso
+      result += `    roles["${role}"] = payable(msg.sender);\n`;
+    });
 
     result += `
     // Enable the start process
