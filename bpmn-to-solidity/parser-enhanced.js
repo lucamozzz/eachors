@@ -65,8 +65,9 @@ async function parseBpmn(filePath) {
     // 🔹 MIGLIORATO: Gateway con supporto default flow
     const gateways = parseGateways(flowElements);
 
+   // FIX: Escludiamo i Gateway dalla lista degli eventi per evitare duplicati/sovrascritture
     const events = flowElements
-      .filter(e => e.$type.includes('Event'))
+      .filter(e => e.$type.includes('Event') && !e.$type.includes('Gateway'))
       .map(ev => ({ id: ev.id, name: ev.name || ev.id, type: ev.$type }));
 
     // 5. Sequence flow con condizioni
