@@ -1,11 +1,11 @@
 const { ChoreographyTask, Gateway } = require('./model-enhanced.js');
 
 class SolidityGenerator {
-  constructor(model) {
+  constructor(model, envAddress) {
     this.model = model;
+    this.envAddress = envAddress || "0x0000000000000000000000000000000000000000"; // Default safe
     this.elementIndexMap = new Map();
     this.buildElementIndexes();
-    // Check if Environment is needed (if any condition contains '.')
     this.needsEnvironment = this.checkForEnvironmentUsage();
   }
 
@@ -130,11 +130,10 @@ contract ${this.model.processName} {
       result += `    roles["${role}"] = payable(msg.sender);\n`;
     });
 
-    // Collega env solo se serve
     if (this.needsEnvironment) {
         result += `
-    // 3. Connect Environment
-    env = IEnvironment(0x791e9f5007E9dE6B3e6474EE64C56A912c5c4144);
+    // 3. Connect Environment (DINAMICO)
+    env = IEnvironment(${this.envAddress});
 `;
     }
     
@@ -480,8 +479,9 @@ ${this.generateNextElementEnabling(event)}
   isStringValue(value) { return value.startsWith('"') && value.endsWith('"'); }
 }
 
-function generateSolidity(model) {
-  return new SolidityGenerator(model).generate();
+function generateSolidity(model, envAddress) {
+  const generator = new SolidityGenerator(model, envAddress);
+  return generator.generate();
 }
 
 module.exports = { generateSolidity, SolidityGenerator };

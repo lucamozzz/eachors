@@ -97,38 +97,87 @@ export function addDeployButtonToCanvas(modeler) {
 
   deployBtn.onclick = async () => {
     try {
-      const solidityCode = window.__LAST_CONTRACT__;
-      if (!solidityCode) return;
+      deployBtn.textContent = "🌍 Deploying Environment...";
+      deployBtn.disabled = true;
 
-      deployBtn.textContent = "⏳ Deploying...";
+      // 1. RECUPERA DATI ENVIRONMENT (Dinamico!)
+      let envAddress = null;
       
-      const response = await fetch('http://localhost:3000/deploy', {
+      if (window.bpenvModeler) {
+          // Recupera il JSON dal modeler dell'environment
+          // Nota: getModel() o saveXML/saveJSON dipende dalla tua libreria. 
+          // Solitamente bpenv-js ha un metodo per esportare.
+          // Assumiamo che getModel() restituisca l'oggetto JS o che tu possa ottenerlo.
+          // Se bpenv è basato su bpmn-js, potresti dover fare le definizioni.
+          // Ma se hai detto "c'è un metodo getModel()", usiamo quello.
+          const envModelData = window.bpenvModeler.getModel(); 
+          
+          console.log("Dati Environment recuperati:", envModelData);
+
+          // 2. DEPLOY ENVIRONMENT
+          const envResponse = await fetch('http://localhost:3000/deploy-env', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify(envModelData)
+          });
+          const envResult = await envResponse.json();
+          
+          if (!envResult.success) throw new Error("Env Deploy Failed: " + envResult.error);
+          envAddress = envResult.address;
+          console.log("Environment deployato a:", envAddress);
+      } else {
+          console.warn("⚠️ BpenvModeler non trovato! Uso indirizzo default (Pizza mode).");
+      }
+
+      // 3. GENERAZIONE CONTRATTO CHOREOGRAPHY (Con l'indirizzo dinamico!)
+      deployBtn.textContent = "⚙️ Generating Contract...";
+      
+      const { xml } = await modeler.saveXML({ format: true });
+      
+      const convertResponse = await fetch("http://localhost:3000/convert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" }, // Nota: JSON ora, non XML raw
+        body: JSON.stringify({ 
+            xml: xml, 
+            envAddress: envAddress // Passiamo l'indirizzo appena creato!
+        })
+      });
+      
+      const conversion = await convertResponse.json();
+      if (!conversion.success) throw new Error("Generation Failed: " + conversion.error);
+      
+      const solidityCode = conversion.solidityCode;
+      window.__LAST_CONTRACT__ = solidityCode; // Aggiorna anteprima
+
+      // 4. DEPLOY CHOREOGRAPHY
+      deployBtn.textContent = "🚀 Deploying Choreography...";
+      
+      const deployResponse = await fetch('http://localhost:3000/deploy', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ solidityCode })
       });
 
-      const result = await response.json();
+      const result = await deployResponse.json();
       
       if (result.success) {
         deployBtn.textContent = "✅ Deployed";
         deployBtn.style.background = "#e8f5e9";
-        deployBtn.style.borderColor = "#4caf50";
-        deployBtn.style.color = "#1b5e20";
         
-        alert("Contratto deployato con successo!\nIndirizzo: " + result.contractAddress);
+        alert(`🎉 Sistema Deployato!\n\n🌍 Environment: ${envAddress || "N/A"}\n📜 Choreography: ${result.contractAddress}`);
         
         if (result.abi) {
             initBlockchainInteraction(modeler, result.contractAddress, result.abi);
         }
       } else {
-        deployBtn.textContent = "❌ Failed";
-        alert("Deploy fallito: " + result.error);
+        throw new Error(result.error);
       }
+
     } catch (err) {
       console.error(err);
       deployBtn.textContent = "❌ Error";
-      alert("Errore durante il deploy: " + err.message);
+      deployBtn.disabled = false;
+      alert("Errore Processo: " + err.message);
     }
   };
 }
