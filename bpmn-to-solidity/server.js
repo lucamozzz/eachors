@@ -83,6 +83,7 @@ app.post('/deploy-env', async (req, res) => {
         const viewAggVals = (envData.views || []).map(v => Object.values(v.aggregations || {}).map(val => toBytes32(web3, val)));
 
         // Deploy
+        let totalGasEnv = 0;
         const Contract = new web3.eth.Contract(abi);
         const instance = await Contract.deploy({
             data: '0x' + bytecode,
@@ -91,7 +92,11 @@ app.post('/deploy-env', async (req, res) => {
                 lpExpressions, viewKeysBytes, viewLPs, viewAggKeys, viewAggVals
             ]
         // Usa un valore alto, ma inferiore al limite impostato in Ganache (es. 30M)
-}).send({ from: deployer, gas: 25000000 });
+}).send({ from: deployer, gas: 25000000 })
+        .on('receipt', (receipt) => {
+            console.log(`⛽ Environment Root Contract Gas: ${receipt.gasUsed}`);
+            // Salviamo il gas parziale in una variabile (dobbiamo definire totalGas prima)
+        });
 
         const envAddress = instance.options.address;
         console.log(`✅ Environment Deployed at: ${envAddress}`);
@@ -105,11 +110,16 @@ app.post('/deploy-env', async (req, res) => {
                 const attrKeysList = attrs.map(([k, v]) => toBytes32(web3, k));
                 const attrValList = attrs.map(([k, v]) => toBytes32(web3, v));
                 await instance.methods.updatePhysicalPlaces([placeIdBytes], [attrKeysList], [attrValList])
-                    .send({ from: deployer, gas: 5000000 }); // Aumentiamo per sicurezza
+                    .send({ from: deployer, gas: 5000000 })
+                    .on('receipt', (r) => { 
+                        totalGasEnv += Number(r.gasUsed);
+                        // console.log(`   + Attr Update Gas: ${r.gasUsed}`); 
+                    });
             }
         }
 
-        res.json({ success: true, address: envAddress });
+        res.json({ success: true, address: envAddress, totalGas: totalGasEnv });
+        console.log(`⛽ Total Environment Gas Cost (approx): ${totalGasEnv}`);
 
     } catch (err) {
         console.error("❌ Env Deploy Error:", err);
@@ -191,7 +201,10 @@ app.post('/deploy', async (req, res) => {
     const web3 = new Web3('http://127.0.0.1:7545');
     const accounts = await web3.eth.getAccounts();
     const deployTx = new web3.eth.Contract(contract.abi).deploy({ data: '0x' + contract.evm.bytecode.object });
-    const deployed = await deployTx.send({ from: accounts[0], gas: 6721975 });
+    const deployed = await deployTx.send({ from: accounts[0], gas: 6721975 })
+                                .on('receipt', (r) => {
+                                    console.log(`⛽ Choreography Contract Gas: ${r.gasUsed}`);
+                                });
 
     return res.json({ success: true, contractAddress: deployed.options.address, abi: contract.abi });
     } catch(e) {

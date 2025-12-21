@@ -2,18 +2,18 @@ import Web3 from 'web3';
 
 let web3;
 let contractInstance;
-let interactionState = {}; 
+let interactionState = {};
 let pollingInterval = null;
 
 export function addDeployButtonToCanvas(modeler) {
-  const canvasContainer = document.getElementById("canvas");
-  if (!canvasContainer) return;
-  if (document.getElementById("deploy-contract-btn")) return;
+    const canvasContainer = document.getElementById("canvas");
+    if (!canvasContainer) return;
+    if (document.getElementById("deploy-contract-btn")) return;
 
-  // --- UI Container (Alto Destra) ---
-  const toolsDiv = document.createElement("div");
-  toolsDiv.id = "contract-tools";
-  toolsDiv.style.cssText = `
+    // --- UI Container (Alto Destra) ---
+    const toolsDiv = document.createElement("div");
+    toolsDiv.id = "contract-tools";
+    toolsDiv.style.cssText = `
     position: absolute;
     top: 20px;
     right: 20px;
@@ -24,7 +24,7 @@ export function addDeployButtonToCanvas(modeler) {
     align-items: flex-end;
   `;
 
-  const btnStyle = `
+    const btnStyle = `
     padding: 8px 12px;
     background: #fff;
     border: 1px solid #ccc;
@@ -36,150 +36,150 @@ export function addDeployButtonToCanvas(modeler) {
     font-weight: 600;
   `;
 
-  // Bottone Generazione
-  const generateBtn = document.createElement("button");
-  generateBtn.id = "generate-contract-btn";
-  generateBtn.textContent = "📄 Generate Solidity Contract";
-  generateBtn.style.cssText = btnStyle;
-  toolsDiv.appendChild(generateBtn);
+    // Bottone Generazione
+    const generateBtn = document.createElement("button");
+    generateBtn.id = "generate-contract-btn";
+    generateBtn.textContent = "📄 Generate Solidity Contract";
+    generateBtn.style.cssText = btnStyle;
+    toolsDiv.appendChild(generateBtn);
 
-  // Bottone Deploy (Disabilitato inizialmente)
-  const deployBtn = document.createElement("button");
-  deployBtn.id = "deploy-contract-btn";
-  deployBtn.textContent = "🚀 Deploy to Smart Contract";
-  deployBtn.style.cssText = btnStyle;
-  deployBtn.disabled = true;
-  deployBtn.style.opacity = "0.6";
-  toolsDiv.appendChild(deployBtn);
+    // Bottone Deploy (Disabilitato inizialmente)
+    const deployBtn = document.createElement("button");
+    deployBtn.id = "deploy-contract-btn";
+    deployBtn.textContent = "🚀 Deploy to Smart Contract";
+    deployBtn.style.cssText = btnStyle;
+    deployBtn.disabled = true;
+    deployBtn.style.opacity = "0.6";
+    toolsDiv.appendChild(deployBtn);
 
-  canvasContainer.appendChild(toolsDiv);
+    canvasContainer.appendChild(toolsDiv);
 
-  // --- LOGICA BOTTONI ---
+    // --- LOGICA BOTTONI ---
 
-  generateBtn.onclick = async () => {
-    try {
-      generateBtn.textContent = "⏳ Generating...";
-      
-      const { xml } = await modeler.saveXML({ format: true });
-      const response = await fetch("http://localhost:3000/convert", {
-        method: "POST",
-        headers: { "Content-Type": "application/xml" },
-        body: xml
-      });
+    generateBtn.onclick = async () => {
+        try {
+            generateBtn.textContent = "⏳ Generating...";
 
-      const conversion = await response.json();
-      
-      if (conversion.success) {
-        window.__LAST_CONTRACT__ = conversion.solidityCode;
-        
-        generateBtn.textContent = "📄 Regenerate Contract";
-        
-        // Abilita il deploy
-        deployBtn.disabled = false;
-        deployBtn.style.opacity = "1";
-        deployBtn.style.background = "#e3f2fd";
-        deployBtn.style.borderColor = "#2196f3";
-        deployBtn.style.color = "#0d47a1";
+            const { xml } = await modeler.saveXML({ format: true });
+            const response = await fetch("http://localhost:3000/convert", {
+                method: "POST",
+                headers: { "Content-Type": "application/xml" },
+                body: xml
+            });
 
-        // 🔥 NUOVA FUNZIONE: MOSTRA L'ANTEPRIMA DEL CODICE
-        showContractPreview(conversion.solidityCode);
-        
-      } else {
-        alert("Generazione fallita: " + conversion.error);
-        generateBtn.textContent = "📄 Generate Solidity Contract";
-      }
-    } catch (err) {
-      console.error(err);
-      alert("Errore di connessione al server.");
-      generateBtn.textContent = "📄 Generate Solidity Contract";
-    }
-  };
+            const conversion = await response.json();
 
-  deployBtn.onclick = async () => {
-    try {
-      deployBtn.textContent = "🌍 Deploying Environment...";
-      deployBtn.disabled = true;
+            if (conversion.success) {
+                window.__LAST_CONTRACT__ = conversion.solidityCode;
 
-      // 1. RECUPERA DATI ENVIRONMENT (Dinamico!)
-      let envAddress = null;
-      
-      if (window.bpenvModeler) {
-          // Recupera il JSON dal modeler dell'environment
-          // Nota: getModel() o saveXML/saveJSON dipende dalla tua libreria. 
-          // Solitamente bpenv-js ha un metodo per esportare.
-          // Assumiamo che getModel() restituisca l'oggetto JS o che tu possa ottenerlo.
-          // Se bpenv è basato su bpmn-js, potresti dover fare le definizioni.
-          // Ma se hai detto "c'è un metodo getModel()", usiamo quello.
-          const envModelData = window.bpenvModeler.getModel(); 
-          
-          console.log("Dati Environment recuperati:", envModelData);
+                generateBtn.textContent = "📄 Regenerate Contract";
 
-          // 2. DEPLOY ENVIRONMENT
-          const envResponse = await fetch('http://localhost:3000/deploy-env', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(envModelData)
-          });
-          const envResult = await envResponse.json();
-          
-          if (!envResult.success) throw new Error("Env Deploy Failed: " + envResult.error);
-          envAddress = envResult.address;
-          console.log("Environment deployato a:", envAddress);
-      } else {
-          console.warn("⚠️ BpenvModeler non trovato! Uso indirizzo default (Pizza mode).");
-      }
+                // Abilita il deploy
+                deployBtn.disabled = false;
+                deployBtn.style.opacity = "1";
+                deployBtn.style.background = "#e3f2fd";
+                deployBtn.style.borderColor = "#2196f3";
+                deployBtn.style.color = "#0d47a1";
 
-      // 3. GENERAZIONE CONTRATTO CHOREOGRAPHY (Con l'indirizzo dinamico!)
-      deployBtn.textContent = "⚙️ Generating Contract...";
-      
-      const { xml } = await modeler.saveXML({ format: true });
-      
-      const convertResponse = await fetch("http://localhost:3000/convert", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" }, // Nota: JSON ora, non XML raw
-        body: JSON.stringify({ 
-            xml: xml, 
-            envAddress: envAddress // Passiamo l'indirizzo appena creato!
-        })
-      });
-      
-      const conversion = await convertResponse.json();
-      if (!conversion.success) throw new Error("Generation Failed: " + conversion.error);
-      
-      const solidityCode = conversion.solidityCode;
-      window.__LAST_CONTRACT__ = solidityCode; // Aggiorna anteprima
+                // 🔥 NUOVA FUNZIONE: MOSTRA L'ANTEPRIMA DEL CODICE
+                showContractPreview(conversion.solidityCode);
 
-      // 4. DEPLOY CHOREOGRAPHY
-      deployBtn.textContent = "🚀 Deploying Choreography...";
-      
-      const deployResponse = await fetch('http://localhost:3000/deploy', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ solidityCode })
-      });
-
-      const result = await deployResponse.json();
-      
-      if (result.success) {
-        deployBtn.textContent = "✅ Deployed";
-        deployBtn.style.background = "#e8f5e9";
-        
-        alert(`🎉 Sistema Deployato!\n\n🌍 Environment: ${envAddress || "N/A"}\n📜 Choreography: ${result.contractAddress}`);
-        
-        if (result.abi) {
-            initBlockchainInteraction(modeler, result.contractAddress, result.abi);
+            } else {
+                alert("Generazione fallita: " + conversion.error);
+                generateBtn.textContent = "📄 Generate Solidity Contract";
+            }
+        } catch (err) {
+            console.error(err);
+            alert("Errore di connessione al server.");
+            generateBtn.textContent = "📄 Generate Solidity Contract";
         }
-      } else {
-        throw new Error(result.error);
-      }
+    };
 
-    } catch (err) {
-      console.error(err);
-      deployBtn.textContent = "❌ Error";
-      deployBtn.disabled = false;
-      alert("Errore Processo: " + err.message);
-    }
-  };
+    deployBtn.onclick = async () => {
+        try {
+            deployBtn.textContent = "🌍 Deploying Environment...";
+            deployBtn.disabled = true;
+
+            // 1. RECUPERA DATI ENVIRONMENT (Dinamico!)
+            let envAddress = null;
+
+            if (window.bpenvModeler) {
+                // Recupera il JSON dal modeler dell'environment
+                // Nota: getModel() o saveXML/saveJSON dipende dalla tua libreria. 
+                // Solitamente bpenv-js ha un metodo per esportare.
+                // Assumiamo che getModel() restituisca l'oggetto JS o che tu possa ottenerlo.
+                // Se bpenv è basato su bpmn-js, potresti dover fare le definizioni.
+                // Ma se hai detto "c'è un metodo getModel()", usiamo quello.
+                const envModelData = window.bpenvModeler.getModel();
+
+                console.log("Dati Environment recuperati:", envModelData);
+
+                // 2. DEPLOY ENVIRONMENT
+                const envResponse = await fetch('http://localhost:3000/deploy-env', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(envModelData)
+                });
+                const envResult = await envResponse.json();
+
+                if (!envResult.success) throw new Error("Env Deploy Failed: " + envResult.error);
+                envAddress = envResult.address;
+                console.log("Environment deployato a:", envAddress);
+            } else {
+                console.warn("⚠️ BpenvModeler non trovato! Uso indirizzo default (Pizza mode).");
+            }
+
+            // 3. GENERAZIONE CONTRATTO CHOREOGRAPHY (Con l'indirizzo dinamico!)
+            deployBtn.textContent = "⚙️ Generating Contract...";
+
+            const { xml } = await modeler.saveXML({ format: true });
+
+            const convertResponse = await fetch("http://localhost:3000/convert", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" }, // Nota: JSON ora, non XML raw
+                body: JSON.stringify({
+                    xml: xml,
+                    envAddress: envAddress // Passiamo l'indirizzo appena creato!
+                })
+            });
+
+            const conversion = await convertResponse.json();
+            if (!conversion.success) throw new Error("Generation Failed: " + conversion.error);
+
+            const solidityCode = conversion.solidityCode;
+            window.__LAST_CONTRACT__ = solidityCode; // Aggiorna anteprima
+
+            // 4. DEPLOY CHOREOGRAPHY
+            deployBtn.textContent = "🚀 Deploying Choreography...";
+
+            const deployResponse = await fetch('http://localhost:3000/deploy', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ solidityCode })
+            });
+
+            const result = await deployResponse.json();
+
+            if (result.success) {
+                deployBtn.textContent = "✅ Deployed";
+                deployBtn.style.background = "#e8f5e9";
+
+                alert(`🎉 Sistema Deployato!\n\n🌍 Environment: ${envAddress || "N/A"}\n📜 Choreography: ${result.contractAddress}`);
+
+                if (result.abi) {
+                    initBlockchainInteraction(modeler, result.contractAddress, result.abi);
+                }
+            } else {
+                throw new Error(result.error);
+            }
+
+        } catch (err) {
+            console.error(err);
+            deployBtn.textContent = "❌ Error";
+            deployBtn.disabled = false;
+            alert("Errore Processo: " + err.message);
+        }
+    };
 }
 
 // ---------------------------------------------------------
@@ -221,7 +221,7 @@ function showContractPreview(code) {
         font-weight: bold;
     `;
     header.innerHTML = `<span>Anteprima Contratto Solidity</span>`;
-    
+
     const closeBtn = document.createElement("button");
     closeBtn.textContent = "✕ Chiudi";
     closeBtn.style.cursor = "pointer";
@@ -256,7 +256,7 @@ function showContractPreview(code) {
 // ---------------------------------------------------------
 
 async function initBlockchainInteraction(modeler, address, abi) {
-    web3 = new Web3("http://localhost:7545"); 
+    web3 = new Web3("http://localhost:7545");
     contractInstance = new web3.eth.Contract(abi, address);
     startPolling(modeler);
     setupClickListener(modeler, abi);
@@ -269,23 +269,23 @@ function startPolling(modeler) {
     pollingInterval = setInterval(async () => {
         try {
             const result = await contractInstance.methods.getCurrentState().call();
-            const elements = result[0]; 
+            const elements = result[0];
             elements.forEach(el => {
                 const bpmnId = el.ID;
-                const status = parseInt(el.status); 
+                const status = parseInt(el.status);
                 interactionState[bpmnId] = status;
                 updateElementColor(canvas, bpmnId, status);
             });
         } catch (err) { }
-    }, 1500); 
+    }, 1500);
 }
 
 function updateElementColor(canvas, elementId, status) {
     canvas.removeMarker(elementId, 'highlight-yellow');
     canvas.removeMarker(elementId, 'highlight-green');
     canvas.removeMarker(elementId, 'highlight-red');
-    if (status === 1) canvas.addMarker(elementId, 'highlight-green'); 
-    else if (status === 2) canvas.addMarker(elementId, 'highlight-red');   
+    if (status === 1) canvas.addMarker(elementId, 'highlight-green');
+    else if (status === 2) canvas.addMarker(elementId, 'highlight-red');
 }
 
 function setupClickListener(modeler, abi) {
@@ -334,7 +334,7 @@ function showInputPopup(functionName, methodAbi, messageParams) {
     if (existing) document.body.removeChild(existing);
 
     const popup = document.createElement('div');
-    popup.className = 'token-popup blockchain-popup'; 
+    popup.className = 'token-popup blockchain-popup';
     popup.style.cssText = `
         position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%);
         background: white; padding: 25px; border-radius: 8px; 
@@ -360,7 +360,7 @@ function showInputPopup(functionName, methodAbi, messageParams) {
         paramsToRender.forEach((param) => {
             const wrapper = document.createElement('div');
             wrapper.style.marginBottom = "15px";
-            
+
             const label = document.createElement('label');
             label.innerText = `${param.name} (${param.type})`;
             label.style.display = "block";
@@ -368,7 +368,7 @@ function showInputPopup(functionName, methodAbi, messageParams) {
             label.style.color = "#666";
             label.style.marginBottom = "5px";
             label.style.fontWeight = "bold";
-            
+
             const field = document.createElement('input');
             field.type = (param.type && param.type.includes('int')) ? 'number' : 'text';
             field.placeholder = `Inserisci ${param.name}`;
@@ -377,7 +377,7 @@ function showInputPopup(functionName, methodAbi, messageParams) {
             field.style.boxSizing = "border-box";
             field.style.border = "1px solid #ccc";
             field.style.borderRadius = "4px";
-            
+
             wrapper.appendChild(label);
             wrapper.appendChild(field);
             popup.appendChild(wrapper);
@@ -399,15 +399,16 @@ function showInputPopup(functionName, methodAbi, messageParams) {
     const sendBtn = document.createElement('button');
     sendBtn.innerText = "Conferma e Invia";
     sendBtn.style.cssText = "padding: 8px 15px; border: none; background: #4CAF50; color: white; cursor: pointer; border-radius: 4px; font-weight: bold;";
-    
+
     sendBtn.onclick = async () => {
         const args = inputs.map(i => i.value);
         try {
             sendBtn.innerText = "Invio in corso...";
             sendBtn.disabled = true;
             const accounts = await web3.eth.getAccounts();
-            await contractInstance.methods[functionName](...args).send({ from: accounts[0], gas: 6721975 });
-            alert("✅ Transazione inviata con successo!");
+            const receipt = await contractInstance.methods[functionName](...args).send({ from: accounts[0], gas: 6721975 });
+            console.log(`⛽ Task Execution Gas: ${receipt.gasUsed}`);
+            alert(`✅ Transazione inviata con successo!\n⛽ Gas Used: ${receipt.gasUsed}`);
             document.body.removeChild(popup);
         } catch (err) {
             console.error(err);
