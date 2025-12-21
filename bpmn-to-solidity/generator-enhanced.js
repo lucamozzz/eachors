@@ -7,17 +7,33 @@ class SolidityGenerator {
     this.elementIndexMap = new Map();
     this.buildElementIndexes();
     this.needsEnvironment = this.checkForEnvironmentUsage();
+    this.variableTypes = new Map();
+    this.collectVariableTypes();
+  }
+
+  collectVariableTypes() {
+    this.model.getAllElements().forEach(element => {
+      if (element instanceof ChoreographyTask) {
+        if (element.requestMessage && element.requestMessage.parameters) {
+          element.requestMessage.parameters.forEach(p => this.variableTypes.set(p.name, p.type));
+        }
+        if (element.responseMessage && element.responseMessage.parameters) {
+          element.responseMessage.parameters.forEach(p => this.variableTypes.set(p.name, p.type));
+        }
+      }
+    });
+
   }
 
   checkForEnvironmentUsage() {
     // Scansiona tutte le condizioni nei gateway per vedere se servono dati esterni
     const gateways = this.model.getGateways();
     for (const gw of gateways) {
-        for (const [target, cond] of gw.getAllConditions().entries()) {
-            if (cond && (cond.includes('.') || cond.includes('isReachable') || cond.includes('isPosition'))) {
-                return true;
-            }
+      for (const [target, cond] of gw.getAllConditions().entries()) {
+        if (cond && (cond.includes('.') || cond.includes('isReachable') || cond.includes('isPosition'))) {
+          return true;
         }
+      }
     }
     return false;
   }
@@ -32,7 +48,7 @@ class SolidityGenerator {
     let result = '';
     result += this.generateHeader();
     result += this.generateStructures();
-    result += this.generateStateVariables(); 
+    result += this.generateStateVariables();
     result += this.generateConstructor();
     result += this.generateModifiers();
     result += this.generateInitFunction();
@@ -49,7 +65,7 @@ pragma solidity 0.8.19;
 `;
     // Genera l'interfaccia SOLO se serve
     if (this.needsEnvironment) {
-        header += `
+      header += `
 interface IEnvironment {
     function getAttribute(bytes32 id, bytes32 attributeKey) external view returns (bytes32);
     function isReachable(bytes32 conditionId) external view returns (bool);
@@ -81,7 +97,7 @@ contract ${this.model.processName} {
     } else {
       stateVars.forEach(varName => {
         const type = this.inferSolidityType(varName);
-        result += `    ${type} ${varName};\n`;
+        result += `    ${type} ${this.sanitizeName(varName)};\n`;
       });
     }
     result += `  }\n\n`;
@@ -95,7 +111,7 @@ contract ${this.model.processName} {
 `;
     // Dichiara env solo se serve
     if (this.needsEnvironment) {
-        result += `  IEnvironment env;\n`;
+      result += `  IEnvironment env;\n`;
     }
 
     result += `
@@ -114,13 +130,21 @@ contract ${this.model.processName} {
   generateConstructor() {
     const allElements = this.model.getAllElements();
     const roles = this.model.getRoles();
-    
+
     let result = `  constructor() {
     // 1. Initialize Elements
 `;
-    allElements.forEach((el, index) => {
-        result += `    elements.push(Element("${el.id}", State.DISABLED));\n`;
-        result += `    position["${el.id}"] = ${index};\n`;
+    let currentIndex = 0;
+    allElements.forEach((el) => {
+      result += `    elements.push(Element("${el.id}", State.DISABLED));\n`;
+      result += `    position["${el.id}"] = ${currentIndex};\n`;
+      currentIndex++;
+
+      if (el instanceof ChoreographyTask && el.responseMessage) {
+        result += `    elements.push(Element("${el.id}_response", State.DISABLED));\n`;
+        result += `    position["${el.id}_response"] = ${currentIndex};\n`;
+        currentIndex++;
+      }
     });
 
     result += `
@@ -131,12 +155,12 @@ contract ${this.model.processName} {
     });
 
     if (this.needsEnvironment) {
-        result += `
+      result += `
     // 3. Connect Environment (DINAMICO)
     env = IEnvironment(${this.envAddress});
 `;
     }
-    
+
     result += `    
     // 4. Start Process
     init();
@@ -186,7 +210,7 @@ contract ${this.model.processName} {
   }
 `;
     if (this.needsEnvironment) {
-        result += `
+      result += `
   function setEnvironment(address _envAddress) public {
       env = IEnvironment(_envAddress);
   }
@@ -233,16 +257,25 @@ contract ${this.model.processName} {
     const participant = this.getParticipantRole(task.initiatingParticipant);
     const parameters = this.generateParameterString(message);
     const isPayable = message && message.name && message.name.includes('payment');
-    
+
     let result = `
   function ${this.parseSid(task.id)}(${parameters}${isPayable ? ', address payable dest' : ''}) public${isPayable ? ' payable' : ''} checkMand(roleList[${this.getRoleIndex(participant)}]) {
     require(elements[position["${task.id}"]].status == State.ENABLED, "Task not enabled");
     done("${task.id}");
+
+    // 🔹 FIX: Event Based Gateway Mutual Exclusion
+    // Se questo task arriva da un EventBasedGateway, disabilita le altre scelte!
+    ${this.generateEventGatewayDisableLogic(task)}
+
 `;
     if (message && message.parameters) {
-      message.parameters.forEach(p => result += `    currentMemory.${p.name} = ${p.name};\n`);
+      message.parameters.forEach(p => result += `    currentMemory.${this.sanitizeName(p.name)} = ${this.sanitizeName(p.name)};\n`);
     }
-    result += this.generateNextElementEnabling(task);
+    if (task.responseMessage) {
+      result += `    enable("${task.id}_response");\n`;
+    } else {
+      result += this.generateNextElementEnabling(task);
+    }
     result += '  }\n';
     return result;
   }
@@ -258,7 +291,7 @@ contract ${this.model.processName} {
     done("${task.id}_response");
 `;
     if (message && message.parameters) {
-      message.parameters.forEach(p => result += `    currentMemory.${p.name} = ${p.name};\n`);
+      message.parameters.forEach(p => result += `    currentMemory.${this.sanitizeName(p.name)} = ${this.sanitizeName(p.name)};\n`);
     }
     result += this.generateNextElementEnabling(task);
     result += '  }\n';
@@ -295,11 +328,11 @@ contract ${this.model.processName} {
         result += `    else { revert("No valid condition in XOR"); }\n`;
       }
     } else {
-       const targetId = gateway.outgoing[0];
-       if(targetId) {
-          result += `    enable("${targetId}");\n`;
-          if (this.model.getElementById(targetId) instanceof Gateway) result += `    ${this.parseSid(targetId)}();\n`;
-       }
+      const targetId = gateway.outgoing[0];
+      if (targetId) {
+        result += `    enable("${targetId}");\n`;
+        if (this.model.getElementById(targetId) instanceof Gateway) result += `    ${this.parseSid(targetId)}();\n`;
+      }
     }
     result += `  }\n`;
     return result;
@@ -361,8 +394,11 @@ ${this.generateNextElementEnabling(event)}
     element.outgoing.forEach(targetId => {
       result += `    enable("${targetId}");\n`;
       const nextElement = this.model.getElementById(targetId);
-      if (nextElement instanceof Gateway) {
-        result += `    ${this.parseSid(targetId)}();\n`;
+      if (nextElement) {
+        // Se è un Gateway o un EndEvent, eseguilo subito!
+        if (nextElement instanceof Gateway || nextElement.type === 'bpmn:EndEvent') {
+          result += `    ${this.parseSid(targetId)}();\n`;
+        }
       }
     });
     return result;
@@ -370,7 +406,7 @@ ${this.generateNextElementEnabling(event)}
 
   generateParameterString(message) {
     if (!message || !message.parameters) return '';
-    return message.parameters.map(p => `${this.mapToSolidityType(p.type)} ${p.name}`).join(', ');
+    return message.parameters.map(p => `${this.mapToSolidityType(p.type, true)} ${this.sanitizeName(p.name)}`).join(', ');
   }
 
   translateCondition(condition) {
@@ -380,49 +416,49 @@ ${this.generateNextElementEnabling(event)}
 
     // Se non serve l'environment, usa la logica semplice (per Pizza)
     if (!this.needsEnvironment) {
-        if (condition.includes('==')) {
-            const [v, val] = condition.split('==').map(s => s.trim());
-            if (val.startsWith('"')) return `compareStrings(currentMemory.${v}, ${val})`;
-            return `currentMemory.${v} == ${val}`;
-        }
-        if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(condition)) return `currentMemory.${condition}`;
-        return condition.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g, 'currentMemory.$1');
+      if (condition.includes('==')) {
+        const [v, val] = condition.split('==').map(s => s.trim());
+        if (val.startsWith('"')) return `compareStrings(currentMemory.${this.sanitizeName(v)}, ${val})`;
+        return `currentMemory.${this.sanitizeName(v)} == ${val}`;
+      }
+      if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(condition)) return `currentMemory.${this.sanitizeName(condition)}`;
+      return condition.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g, (match) => 'currentMemory.' + this.sanitizeName(match));
     }
 
     // Se serve l'environment (per Emergency), usa la logica complessa
     if (condition.includes('isReachable')) {
-        let check = 'true';
-        if (condition.includes('== false')) check = 'false';
-        const safeString = condition.replace(/"/g, '\\"');
-        return `env.isReachable(stringToBytes32("${safeString}")) == ${check}`;
+      let check = 'true';
+      if (condition.includes('== false')) check = 'false';
+      const safeString = condition.replace(/"/g, '\\"');
+      return `env.isReachable(stringToBytes32("${safeString}")) == ${check}`;
     }
 
     const posMatch = condition.match(/isPosition\(([^,]+),([^)]+)\)/);
     if (posMatch) {
-        return `env.getParticipantPosition(stringToBytes32("${posMatch[1].trim()}")) == stringToBytes32("${posMatch[2].trim()}")`;
+      return `env.getParticipantPosition(stringToBytes32("${posMatch[1].trim()}")) == stringToBytes32("${posMatch[2].trim()}")`;
     }
 
     const envMatch = condition.match(/([a-zA-Z0-9_]+)\.([a-zA-Z0-9_]+)\s*([!=<>]+)\s*(.+)/);
     if (envMatch) {
-        const [_, varName, attrName, op, val] = envMatch;
-        const trimmedValue = val.trim();
-        const isNumber = !isNaN(trimmedValue) && !trimmedValue.startsWith('"');
+      const [_, varName, attrName, op, val] = envMatch;
+      const trimmedValue = val.trim();
+      const isNumber = !isNaN(trimmedValue) && !trimmedValue.startsWith('"');
 
-        if (isNumber) {
-            return `bytes32ToUint(env.getAttribute(stringToBytes32(currentMemory.${varName}), stringToBytes32("${attrName}"))) ${op} ${trimmedValue}`;
-        } else {
-            const valClean = trimmedValue.replace(/"/g, '');
-            return `env.getAttribute(stringToBytes32(currentMemory.${varName}), stringToBytes32("${attrName}")) ${op} stringToBytes32("${valClean}")`;
-        }
+      if (isNumber) {
+        return `bytes32ToUint(env.getAttribute(stringToBytes32(currentMemory.${this.sanitizeName(varName)}), stringToBytes32("${attrName}"))) ${op} ${trimmedValue}`;
+      } else {
+        const valClean = trimmedValue.replace(/"/g, '');
+        return `env.getAttribute(stringToBytes32(currentMemory.${this.sanitizeName(varName)}), stringToBytes32("${attrName}")) ${op} stringToBytes32("${valClean}")`;
+      }
     }
 
     // Fallback standard anche in modalità environment
     if (condition.includes('==')) {
       const [v, val] = condition.split('==').map(s => s.trim());
-      if (val.startsWith('"')) return `compareStrings(currentMemory.${v}, ${val})`;
-      return `currentMemory.${v} == ${val}`;
+      if (val.startsWith('"')) return `compareStrings(currentMemory.${this.sanitizeName(v)}, ${val})`;
+      return `currentMemory.${this.sanitizeName(v)} == ${val}`;
     }
-    
+
     return condition;
   }
 
@@ -447,7 +483,7 @@ ${this.generateNextElementEnabling(event)}
 `;
     // Genera helper environment SOLO se necessario
     if (this.needsEnvironment) {
-        result += `
+      result += `
   function stringToBytes32(string memory source) internal pure returns (bytes32 result) {
       bytes memory tempEmptyStringTest = bytes(source);
       if (tempEmptyStringTest.length == 0) return 0x0;
@@ -461,20 +497,51 @@ ${this.generateNextElementEnabling(event)}
     return result;
   }
 
+  generateEventGatewayDisableLogic(task) {
+    let logic = '';
+    // Controlla se il task è preceduto da un EventBasedGateway
+    if (task.incoming && task.incoming.length > 0) {
+      task.incoming.forEach(sourceId => {
+        const sourceElement = this.model.getElementById(sourceId);
+        if (sourceElement && sourceElement.isEventBased && sourceElement.isEventBased()) {
+          // Trovato un Event Gateway padre!
+          // Disabilita tutti gli ALTRI outgoing che non siano questo task
+          sourceElement.outgoing.forEach(siblingId => {
+            if (siblingId !== task.id) {
+              logic += `    disable("${siblingId}");\n`;
+            }
+          });
+        }
+      });
+    }
+    return logic;
+  }
+
   // UTILS
+  sanitizeName(name) {
+    const reserved = ['address', 'bool', 'string', 'uint', 'int', 'bytes', 'byte', 'mapping', 'struct', 'enum', 'function', 'constructor', 'event', 'modifier', 'contract', 'library', 'interface', 'payable', 'view', 'pure', 'public', 'private', 'internal', 'external', 'storage', 'memory', 'calldata', 'virtual', 'override', 'returns', 'return', 'break', 'continue', 'if', 'else', 'for', 'while', 'do', 'new', 'delete', 'this', 'super', 'emit', 'try', 'catch', 'revert', 'require', 'assert', 'unchecked'];
+    if (reserved.includes(name)) {
+      return `_${name}`;
+    }
+    return name;
+  }
   parseSid(sid) { return sid.replace(/-/g, '_'); }
-  getParticipantRole(participantId) { 
-    const p = this.model.participants.get(participantId); 
-    return p ? p.name : 'Client'; 
+  getParticipantRole(participantId) {
+    const p = this.model.participants.get(participantId);
+    return p ? p.name : 'Client';
   }
   getRoleIndex(roleName) { return this.model.getRoles().indexOf(roleName); }
-  inferSolidityType(varName) { 
+  inferSolidityType(varName) {
+    if (this.variableTypes.has(varName)) {
+      return this.mapToSolidityType(this.variableTypes.get(varName));
+    }
     if (varName.includes('people') || varName.includes('num')) return 'uint';
-    return 'string'; 
+    return 'string';
   }
-  mapToSolidityType(bpmnType) {
-    const map = { 'string': 'string memory', 'uint': 'uint', 'bool': 'bool' };
-    return map[bpmnType] || 'string memory';
+  mapToSolidityType(bpmnType, isParameter = false) {
+    if (bpmnType === 'string') return isParameter ? 'string memory' : 'string';
+    const map = { 'uint': 'uint', 'bool': 'bool' };
+    return map[bpmnType] || (isParameter ? 'string memory' : 'string');
   }
   isStringValue(value) { return value.startsWith('"') && value.endsWith('"'); }
 }

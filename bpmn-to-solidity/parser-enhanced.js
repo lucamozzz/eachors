@@ -9,10 +9,10 @@ async function parseBpmn(filePath) {
   try {
     // Legge il file XML
     const xml = fs.readFileSync(filePath, 'utf8');
-    
+
     // Inizializza bpmn-moddle
     const moddle = new BpmnModdle();
-    
+
     // Esegue il parsing del XML
     const { rootElement } = await moddle.fromXML(xml);
 
@@ -65,7 +65,7 @@ async function parseBpmn(filePath) {
     // 🔹 MIGLIORATO: Gateway con supporto default flow
     const gateways = parseGateways(flowElements);
 
-   // FIX: Escludiamo i Gateway dalla lista degli eventi per evitare duplicati/sovrascritture
+    // FIX: Escludiamo i Gateway dalla lista degli eventi per evitare duplicati/sovrascritture
     const events = flowElements
       .filter(e => e.$type.includes('Event') && !e.$type.includes('Gateway'))
       .map(ev => ({ id: ev.id, name: ev.name || ev.id, type: ev.$type }));
@@ -110,9 +110,34 @@ function parseChoreographyTasks(flowElements) {
       };
 
       if (el.messageFlowRef) {
+        // Logica robusta basata su initiatingParticipantRef per distinguere Request da Response
+        const initPartId = el.initiatingParticipantRef?.id;
+
         el.messageFlowRef.forEach((m, i) => {
-          if (i === 0) task.requestMessage = m.id;
-          else if (i === 1) task.responseMessage = m.id;
+          let isRequest = false;
+
+          if (initPartId && m.sourceRef) {
+            // Se conosco chi inizia, la Request è quella che PARTE da lui
+            if (m.sourceRef.id === initPartId) {
+              isRequest = true;
+            }
+            // Altrimenti è Response (o messaggio successivo)
+          } else {
+            // Fallback se manca il riferimento al partecipante: usa l'ordine (ma corretto)
+            // Solitamente: 0 = Request, 1 = Response.
+            // Il codice legacy faceva affidamento su questo, ma a volte l'ordine è invertito nel XML?
+            // Se siamo qui, manteniamo la vecchia logica di default o proviamo a indovinare.
+            // Default: 0 -> Request.
+            if (i === 0) isRequest = true;
+          }
+
+          if (isRequest) {
+            task.requestMessage = m.id;
+          } else {
+            // Se ho già una response, non sovrascrivere (potrebbero esserci più messaggi?)
+            // Per ora assumiamo max 1 Request e max 1 Response per Task.
+            task.responseMessage = m.id;
+          }
         });
       }
 
@@ -185,7 +210,7 @@ function parseGateways(flowElements) {
     .filter(e => e.$type.includes('Gateway'))
     .map(g => {
 
-      
+
       return {
         id: g.id,
         name: g.name || g.id,
@@ -203,19 +228,32 @@ function parseSequenceFlows(flowElements) {
     .map(f => {
       // Recupera la condizione da conditionExpression O dal name
       let conditionExpression = null;
-      
+
       // Metodo 1: conditionExpression standard
       if (f.conditionExpression) {
         conditionExpression = f.conditionExpression.body ||
-                             f.conditionExpression.$body ||
-                             f.conditionExpression.value ||
-                             f.conditionExpression.text ||
-                             (typeof f.conditionExpression === 'string' ? f.conditionExpression : JSON.stringify(f.conditionExpression));
+          f.conditionExpression.$body ||
+          f.conditionExpression.value ||
+          f.conditionExpression.text ||
+          (typeof f.conditionExpression === 'string' ? f.conditionExpression : JSON.stringify(f.conditionExpression));
       }
       // Metodo 2: Se non c'è conditionExpression, prova il name
-      else if (f.name && (f.name.includes('==') || f.name.includes('!=') || f.name.includes('>') || f.name.includes('<'))) {
-        conditionExpression = f.name;
+      else if (f.name) {
+        const name = f.name.trim();
+        // Supporto per:
+        // 1. Operatori di confronto: ==, !=, >, <, >=, <=
+        // 2. Variabili booleane semplici: "isReady", "confirmed"
+        // 3. Negazioni: "!isReady"
+        // 4. Valori diretti: "true", "false"
 
+        const hasOperator = /==|!=|>|<|>=|<=/.test(name);
+        const isBoolean = /^!?[a-zA-Z_][a-zA-Z0-9_]*\??$/.test(name); // Es. "confirmed", "!confirmed", "ready?"
+        const isValue = name === 'true' || name === 'false';
+
+        if (hasOperator || isBoolean || isValue) {
+          // Rimuovi eventuale '?' finale se presente (stile BPMN "Approved?")
+          conditionExpression = name.replace(/\?$/, '');
+        }
       }
 
       const flow = {

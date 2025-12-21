@@ -100,21 +100,16 @@ export function addDeployButtonToCanvas(modeler) {
             deployBtn.textContent = "🌍 Deploying Environment...";
             deployBtn.disabled = true;
 
-            // 1. RECUPERA DATI ENVIRONMENT (Dinamico!)
-            let envAddress = null;
+            // 2. DEPLOY ENVIRONMENT (Se esiste tab environment)
+            const bpEnvModeler = window.bpmnjs; // Window global hack
+            let envAddress = "0x0000000000000000000000000000000000000000";
 
-            if (window.bpenvModeler) {
-                // Recupera il JSON dal modeler dell'environment
-                // Nota: getModel() o saveXML/saveJSON dipende dalla tua libreria. 
-                // Solitamente bpenv-js ha un metodo per esportare.
-                // Assumiamo che getModel() restituisca l'oggetto JS o che tu possa ottenerlo.
-                // Se bpenv è basato su bpmn-js, potresti dover fare le definizioni.
-                // Ma se hai detto "c'è un metodo getModel()", usiamo quello.
-                const envModelData = window.bpenvModeler.getModel();
+            if (bpEnvModeler) {
+                deployBtn.textContent = "🌍 Deploying Environment...";
+                const { xml } = await bpEnvModeler.saveXML({ format: true });
+                const envModelData = { xml }; // FIX: Usa l'XML appena salvato, getModel() non esiste.
 
-                console.log("Dati Environment recuperati:", envModelData);
-
-                // 2. DEPLOY ENVIRONMENT
+                // ... (chiamata fetch)
                 const envResponse = await fetch('http://localhost:3000/deploy-env', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
@@ -164,7 +159,7 @@ export function addDeployButtonToCanvas(modeler) {
                 deployBtn.textContent = "✅ Deployed";
                 deployBtn.style.background = "#e8f5e9";
 
-                alert(`🎉 Sistema Deployato!\n\n🌍 Environment: ${envAddress || "N/A"}\n📜 Choreography: ${result.contractAddress}`);
+                alert(`🎉 Sistema Deployato!\n\n🌍 Environment: ${envAddress || "N/A"}\n📜 Choreography: ${result.contractAddress}\n⛽ Gas Used: ${result.gasUsed}`);
 
                 if (result.abi) {
                     initBlockchainInteraction(modeler, result.contractAddress, result.abi);
@@ -274,7 +269,33 @@ function startPolling(modeler) {
                 const bpmnId = el.ID;
                 const status = parseInt(el.status);
                 interactionState[bpmnId] = status;
-                updateElementColor(canvas, bpmnId, status);
+            });
+
+            // MAP ID TO NAMES FOR DEBUG
+            const debugState = {};
+            elements.forEach(el => {
+                const registryEl = modeler.get('elementRegistry').get(el.ID);
+                const name = registryEl ? (registryEl.businessObject.name || el.ID) : el.ID;
+                debugState[name] = el.status;
+            });
+            console.log("--- POLLING STATE (NAMES) ---", debugState);
+
+            elements.forEach(el => {
+                const bpmnId = el.ID;
+                const status = parseInt(el.status);
+
+                // Gestione _response (colora il padre verde se attesa risposta)
+                if (bpmnId.endsWith('_response')) {
+                    const parentId = bpmnId.replace('_response', '');
+                    if (status === 1) {
+                        updateElementColor(canvas, parentId, 1); // ForzagGreen
+                    }
+                } else {
+                    // Solo se non è stato già forzato da una response attiva
+                    if (interactionState[bpmnId + '_response'] !== 1) {
+                        updateElementColor(canvas, bpmnId, status);
+                    }
+                }
             });
         } catch (err) { }
     }, 1500);
@@ -284,8 +305,20 @@ function updateElementColor(canvas, elementId, status) {
     canvas.removeMarker(elementId, 'highlight-yellow');
     canvas.removeMarker(elementId, 'highlight-green');
     canvas.removeMarker(elementId, 'highlight-red');
-    if (status === 1) canvas.addMarker(elementId, 'highlight-green');
-    else if (status === 2) canvas.addMarker(elementId, 'highlight-red');
+    canvas.removeMarker(elementId, 'highlight-blue'); // Aggiungo marker blu per DONE
+
+    // MAPPING STATO (Basato su enum Solidity: 0=DISABLED, 1=ENABLED, 2=DONE)
+    if (status === 1) {
+        // ENABLED -> Verde/Giallo (Attivo, cliccabile)
+        canvas.addMarker(elementId, 'highlight-green');
+    } else if (status === 2) {
+        // DONE -> Rosso (Completato, come richiesto per l'End Event)
+        // Nota: Questo colorerà di rosso anche i task completati con successo.
+        // Se non piace, cambieremo questo in Blue o Grey.
+        canvas.addMarker(elementId, 'highlight-red');
+    }
+    // STATUS 0 (DISABLED) -> Nessun marker (Bianco/Neutro)
+    // Evita che tutto il diagramma diventi rosso all'inizio.
 }
 
 function setupClickListener(modeler, abi) {
@@ -298,21 +331,75 @@ function setupClickListener(modeler, abi) {
             const functionName = elementId.replace(/-/g, '_');
             const methodAbi = abi.find(m => m.name === functionName && m.type === 'function');
             if (methodAbi) {
-                const messageParams = extractMessageParams(element);
+                const messageParams = extractMessageParams(element, false); // false = request
+                showInputPopup(functionName, methodAbi, messageParams);
+            }
+        }
+        else if (interactionState[elementId + '_response'] === 1) {
+            const functionName = elementId.replace(/-/g, '_') + '_response';
+            const methodAbi = abi.find(m => m.name === functionName && m.type === 'function');
+            if (methodAbi) {
+                const messageParams = extractMessageParams(element, true); // true = response
                 showInputPopup(functionName, methodAbi, messageParams);
             }
         }
     });
 }
 
-function extractMessageParams(element) {
+function extractMessageParams(element, isResponse = false) {
     let params = [];
     if (element.type === 'bpmn:ChoreographyTask') {
         const bo = element.businessObject;
         if (bo.messageFlowRef && bo.messageFlowRef.length > 0) {
-            const messageFlow = bo.messageFlowRef[0];
-            if (messageFlow.messageRef) {
+
+            // --- DEBUG LOG START ---
+            console.log(`%c[DEBUG MSG PARAMS] Processing ${element.id}`, "color: orange; font-weight: bold;");
+            console.log("Initiating Participant Ref:", bo.initiatingParticipantRef);
+            console.log("Message Flows:", bo.messageFlowRef);
+            // --- DEBUG LOG END ---
+
+            // Logic based on Initiating Participant to be robust
+            let messageFlow = null;
+            const initPart = bo.initiatingParticipantRef;
+
+            if (initPart) {
+                // Use ID comparison for safety
+                // initPart might be an object, we want its ID.
+                const initPartId = initPart.id;
+
+                if (isResponse) {
+                    // Response: Source is NOT the initiating participant
+                    messageFlow = bo.messageFlowRef.find(mf => mf.sourceRef && mf.sourceRef.id !== initPartId);
+                    console.log(`[DEBUG] Looking for Response (Source != ${initPartId}). Found:`, messageFlow);
+                } else {
+                    // Request: Source IS the initiating participant
+                    messageFlow = bo.messageFlowRef.find(mf => mf.sourceRef && mf.sourceRef.id === initPartId);
+                    console.log(`[DEBUG] Looking for Request (Source == ${initPartId}). Found:`, messageFlow);
+                }
+            } else {
+                console.warn("[DEBUG] No initiatingParticipantRef found on business object!");
+            }
+
+            // Fallback strategy if logic above failed or returned nothing
+            if (!messageFlow) {
+                console.warn("[DEBUG] Logic failed or no flow matches. Using fallback index strategy.");
+                // If 2 messages, usually: 0=Request (Top), 1=Response (Bottom)
+                // The previous code had 1=Request, 0=Response which caused the bug.
+                let idx = 0;
+                if (bo.messageFlowRef.length > 1) {
+                    // FIX: Reverting to natural order based on user feedback
+                    // Request (Top) -> Index 0
+                    // Response (Bottom) -> Index 1
+                    idx = isResponse ? 1 : 0;
+                }
+                messageFlow = bo.messageFlowRef[idx];
+                console.log(`[DEBUG] Fallback selected index ${idx}:`, messageFlow);
+            }
+
+            if (messageFlow && messageFlow.messageRef) {
                 const messageName = messageFlow.messageRef.name;
+                console.log(`[DEBUG] Selected Message Name: ${messageName}`);
+
                 if (messageName && messageName.includes('(')) {
                     const match = messageName.match(/\(([^)]+)\)/);
                     if (match) {
@@ -350,7 +437,8 @@ function showInputPopup(functionName, methodAbi, messageParams) {
     popup.appendChild(title);
 
     const inputs = [];
-    const paramsToRender = (messageParams.length > 0) ? messageParams : methodAbi.inputs;
+    // FORCE USE OF ABI INPUTS (Source of Truth)
+    const paramsToRender = methodAbi.inputs;
 
     if (!paramsToRender || paramsToRender.length === 0) {
         const info = document.createElement('p');
@@ -369,14 +457,34 @@ function showInputPopup(functionName, methodAbi, messageParams) {
             label.style.marginBottom = "5px";
             label.style.fontWeight = "bold";
 
-            const field = document.createElement('input');
-            field.type = (param.type && param.type.includes('int')) ? 'number' : 'text';
-            field.placeholder = `Inserisci ${param.name}`;
-            field.style.width = "100%";
-            field.style.padding = "8px";
-            field.style.boxSizing = "border-box";
-            field.style.border = "1px solid #ccc";
-            field.style.borderRadius = "4px";
+            let field;
+            if (param.type === 'bool') {
+                field = document.createElement('select');
+                field.style.width = "100%";
+                field.style.padding = "8px";
+                field.style.boxSizing = "border-box";
+                field.style.border = "1px solid #ccc";
+                field.style.borderRadius = "4px";
+
+                const optTrue = document.createElement('option');
+                optTrue.value = 'true';
+                optTrue.text = 'true';
+                field.appendChild(optTrue);
+
+                const optFalse = document.createElement('option');
+                optFalse.value = 'false';
+                optFalse.text = 'false';
+                field.appendChild(optFalse);
+            } else {
+                field = document.createElement('input');
+                field.type = (param.type && param.type.includes('int')) ? 'number' : 'text';
+                field.placeholder = `Inserisci ${param.name}`;
+                field.style.width = "100%";
+                field.style.padding = "8px";
+                field.style.boxSizing = "border-box";
+                field.style.border = "1px solid #ccc";
+                field.style.borderRadius = "4px";
+            }
 
             wrapper.appendChild(label);
             wrapper.appendChild(field);
@@ -401,11 +509,18 @@ function showInputPopup(functionName, methodAbi, messageParams) {
     sendBtn.style.cssText = "padding: 8px 15px; border: none; background: #4CAF50; color: white; cursor: pointer; border-radius: 4px; font-weight: bold;";
 
     sendBtn.onclick = async () => {
-        const args = inputs.map(i => i.value);
+        const args = inputs.map((input, index) => {
+            const paramDef = paramsToRender[index];
+            if (paramDef.type === 'bool') {
+                return input.value === 'true';
+            }
+            return input.value;
+        });
         try {
             sendBtn.innerText = "Invio in corso...";
             sendBtn.disabled = true;
             const accounts = await web3.eth.getAccounts();
+            console.log("SENDING ARGS:", args); // DEBUG ARGS
             const receipt = await contractInstance.methods[functionName](...args).send({ from: accounts[0], gas: 6721975 });
             console.log(`⛽ Task Execution Gas: ${receipt.gasUsed}`);
             alert(`✅ Transazione inviata con successo!\n⛽ Gas Used: ${receipt.gasUsed}`);
