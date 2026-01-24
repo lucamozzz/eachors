@@ -103,6 +103,7 @@ export function addDeployButtonToCanvas(modeler) {
             // 2. DEPLOY ENVIRONMENT (Se esiste tab environment)
             const bpEnvModeler = window.bpmnjs; // Window global hack
             let envAddress = "0x0000000000000000000000000000000000000000";
+            let envResult = null; // FIX: Declare here to be accessible below
 
             if (bpEnvModeler) {
                 deployBtn.textContent = "🌍 Deploying Environment...";
@@ -115,7 +116,7 @@ export function addDeployButtonToCanvas(modeler) {
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify(envModelData)
                 });
-                const envResult = await envResponse.json();
+                envResult = await envResponse.json(); // FIX: Assign to outer variable
 
                 if (!envResult.success) throw new Error("Env Deploy Failed: " + envResult.error);
                 envAddress = envResult.address;
@@ -159,7 +160,12 @@ export function addDeployButtonToCanvas(modeler) {
                 deployBtn.textContent = "✅ Deployed";
                 deployBtn.style.background = "#e8f5e9";
 
-                alert(`🎉 Sistema Deployato!\n\n🌍 Environment: ${envAddress || "N/A"}\n📜 Choreography: ${result.contractAddress}\n⛽ Gas Used: ${result.gasUsed}`);
+                // Capture Environment Gas (if deployed)
+                const envGas = envResult ? envResult.totalGas : 0;
+                const chorGas = result.gasUsed;
+                const totalGas = Number(envGas) + Number(chorGas);
+
+                alert(`🎉 Sistema Deployato!\n\n🌍 Environment: ${envAddress || "N/A"}\n📜 Choreography: ${result.contractAddress}\n\n⛽ Environment Cost: ${envGas}\n⛽ Choreography Cost: ${chorGas}\n💰 TOTAL GAS: ${totalGas}`);
 
                 if (result.abi) {
                     initBlockchainInteraction(modeler, result.contractAddress, result.abi);

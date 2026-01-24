@@ -1,161 +1,161 @@
 {
-  
-  "name": "chor-js-demo",
-  
-  "version": "1.1.0",
-  
-  "description": "A demo showcasing the chor-js BPMN 2.0 choreography diagram modeler.",
-  
-  "main": "app/app.js",
-  
-  "scripts": {
-  
-    
-  "build": "parcel build app/index.html -d build --public-url ./",
-  
-    
-  "dev": "parcel app/index.html -p 9013"
-  
-  },
-  
-  "keywords": [
-  
-    
-  "choreography-modeler"
-  
-  ],
-  
-  "author": {
-  
-    
-  "name": "Jan Ladleif",
-  
-    
-  "url": "https://github.com/jan-ladleif"
-  
-  },
-  
-  "contributors": [
-  
-    
-  {
-  
-    
-    
-  "name": "Alessio Prosperi",
-  
-    
-    
-  "url": "https://github.com/SaltyEner"
-  
-    
-  }
-  
-  ],
-  
-  "license": "MIT",
-  
-  "repository": {
-  
-    
-  "type": "git",
-  
-    
-  "url": "https://github.com/bptlab/chor-js-demo"
-  
-  },
-  
-  "assetTypesToStringify": [
-  
-    
-  "bpmn"
-  
-  ],
-  
-  "browserslist": [
-  
-    
-  "last 2 Firefox versions",
-  
-    
-  "last 2 Chrome versions",
-  
-    
-  "last 2 Safari versions",
-  
-    
-  "last 2 Edge versions",
-  
-    
-  "last 2 Opera versions",
-  
-    
-  "last 2 Baidu versions"
-  
-  ],
-  
-  "devDependencies": {
-  
-    
-  "@babel/core": "^7.8.7",
-  
-    
-  "eslint": "^4.19.1",
-  
-    
-  "eslint-plugin-bpmn-io": "^0.7.0",
-  
-    
-  "less": "^3.11.1",
-  
-    
-  "parcel-bundler": "^1.12.4",
-  
-    
-  "parcel-plugin-stringify-anything": "^1.2.0"
-  
-  },
-  
-  "dependencies": {
-  
-    
-  "body-parser": "^2.2.0",
-  
-    
-  "bpenv-modeler": "^0.0.24",
-  
-    
-  "bpmn-js-properties-panel": "^0.35.0",
-  
-    
-  "bpmn-moddle": "^9.0.4",
-  
-    
-  "chor-js": "^0.7.1",
-  
-    
-  "cors": "^2.8.5",
-  
-    
-  "express": "^5.1.0",
-  
-    
-  "inherits": "^2.0.4",
-  
-    
-  "react": "^19.2.0",
-  
-    
-  "react-dom": "^19.2.0",
-  
-    
-  "solc": "^0.8.19",
-  
-    
-  "web3": "^4.16.0",
-  
-    
-  "xmldom": "^0.6.0"
-  
-  }
+  
+"name": "chor-js-demo",
+  
+"version": "1.1.0",
+  
+"description": "A demo showcasing the chor-js BPMN 2.0 choreography diagram modeler.",
+  
+"main": "app/app.js",
+  
+"scripts": {
+  
+  
+"build": "parcel build app/index.html -d build --public-url ./",
+  
+  
+"dev": "parcel app/index.html -p 9013"
+  
+},
+  
+"keywords": [
+  
+  
+"choreography-modeler"
+  
+],
+  
+"author": {
+  
+  
+"name": "Jan Ladleif",
+  
+  
+"url": "https://github.com/jan-ladleif"
+  
+},
+  
+"contributors": [
+  
+  
+{
+  
+  
+  
+"name": "Alessio Prosperi",
+  
+  
+  
+"url": "https://github.com/SaltyEner"
+  
+  
+}
+  
+],
+  
+"license": "MIT",
+  
+"repository": {
+  
+  
+"type": "git",
+  
+  
+"url": "https://github.com/bptlab/chor-js-demo"
+  
+},
+  
+"assetTypesToStringify": [
+  
+  
+"bpmn"
+  
+],
+  
+"browserslist": [
+  
+  
+"last 2 Firefox versions",
+  
+  
+"last 2 Chrome versions",
+  
+  
+"last 2 Safari versions",
+  
+  
+"last 2 Edge versions",
+  
+  
+"last 2 Opera versions",
+  
+  
+"last 2 Baidu versions"
+  
+],
+  
+"devDependencies": {
+  
+  
+"@babel/core": "^7.8.7",
+  
+  
+"eslint": "^4.19.1",
+  
+  
+"eslint-plugin-bpmn-io": "^0.7.0",
+  
+  
+"less": "^3.11.1",
+  
+  
+"parcel-bundler": "^1.12.4",
+  
+  
+"parcel-plugin-stringify-anything": "^1.2.0"
+  
+},
+  
+"dependencies": {
+  
+  
+"body-parser": "^2.2.0",
+  
+  
+"bpenv-modeler": "^0.0.24",
+  
+  
+"bpmn-js-properties-panel": "^0.35.0",
+  
+  
+"bpmn-moddle": "^9.0.4",
+  
+  
+"chor-js": "^0.7.1",
+  
+  
+"cors": "^2.8.5",
+  
+  
+"express": "^5.1.0",
+  
+  
+"inherits": "^2.0.4",
+  
+  
+"react": "^19.2.0",
+  
+  
+"react-dom": "^19.2.0",
+  
+  
+"solc": "^0.8.19",
+  
+  
+"web3": "^4.16.0",
+  
+  
+"xmldom": "^0.6.0"
+  
+}
 }

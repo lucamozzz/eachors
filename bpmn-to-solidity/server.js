@@ -95,7 +95,7 @@ app.post('/deploy-env', async (req, res) => {
         }).send({ from: deployer, gas: 25000000 })
             .on('receipt', (receipt) => {
                 console.log(`⛽ Environment Root Contract Gas: ${receipt.gasUsed}`);
-                // Salviamo il gas parziale in una variabile (dobbiamo definire totalGas prima)
+                totalGasEnv += Number(receipt.gasUsed); // FIX: Add gas to total
             });
 
         const envAddress = instance.options.address;
