@@ -105,9 +105,9 @@ contract ${this.model.processName} {
   }
 
   generateStateVariables() {
-    let result = `  // State Variables
-  Element[] elements;
+    let result = `  Element[] elements;
   StateMemory currentMemory;
+  mapping(string => uint8) joinCounts; // 🔑 NUOVO: Conta quanti rami sono arrivati a un Parallel Join
 `;
     // Dichiara env solo se serve
     if (this.needsEnvironment) {
@@ -307,6 +307,11 @@ contract ${this.model.processName} {
 
   generateExclusiveGatewayFunction(gateway) {
     let result = `  function ${this.parseSid(gateway.id)}() private {
+    // 🔑 MODIFICA: Per i MERGE XOR, non richiediamo ENABLED se è solo un punto di unione
+    bool isMerge = elements[position["${gateway.id}"]].status == State.DISABLED || elements[position["${gateway.id}"]].status == State.DONE;
+    if (isMerge) {
+        enable("${gateway.id}");
+    }
     require(elements[position["${gateway.id}"]].status == State.ENABLED);
     done("${gateway.id}");
 `;
@@ -316,73 +321,80 @@ contract ${this.model.processName} {
     if (conditions.length > 0) {
       conditions.forEach(([targetId, condition], index) => {
         const condCode = this.translateCondition(condition);
-        result += `    ${index === 0 ? 'if' : 'else if'} (${condCode}) {\n      enable("${targetId}");\n`;
-        if (this.model.getElementById(targetId) instanceof Gateway) result += `      ${this.parseSid(targetId)}();\n`;
-        result += `    }\n`;
+        result += `    ${index === 0 ? 'if' : 'else if'} (${condCode}) {
+  \n      enable("${targetId}"); \n`;
+        if (this.model.getElementById(targetId) instanceof Gateway) result += `      ${this.parseSid(targetId)} (); \n`;
+        result += `    } \n`;
       });
       if (defaultFlow) {
-        result += `    else {\n      enable("${defaultFlow}");\n`;
-        if (this.model.getElementById(defaultFlow) instanceof Gateway) result += `      ${this.parseSid(defaultFlow)}();\n`;
-        result += `    }\n`;
+        result += `    else {
+  \n      enable("${defaultFlow}"); \n`;
+        if (this.model.getElementById(defaultFlow) instanceof Gateway) result += `      ${this.parseSid(defaultFlow)} (); \n`;
+        result += `    } \n`;
       } else {
-        result += `    else { revert("No valid condition in XOR"); }\n`;
+        result += `    else { revert("No valid condition in XOR"); } \n`;
       }
     } else {
       const targetId = gateway.outgoing[0];
       if (targetId) {
-        result += `    enable("${targetId}");\n`;
-        if (this.model.getElementById(targetId) instanceof Gateway) result += `    ${this.parseSid(targetId)}();\n`;
+        result += `    enable("${targetId}"); \n`;
+        if (this.model.getElementById(targetId) instanceof Gateway) result += `    ${this.parseSid(targetId)} (); \n`;
       }
     }
-    result += `  }\n`;
+    result += `  } \n`;
     return result;
   }
 
   generateParallelGatewayFunction(gateway) {
-    let result = `  function ${this.parseSid(gateway.id)}() private {
-    require(elements[position["${gateway.id}"]].status == State.ENABLED);
-    done("${gateway.id}");
-`;
+    let result = `  function ${this.parseSid(gateway.id)} () private {
+  require(elements[position["${gateway.id}"]].status == State.ENABLED);
+  done("${gateway.id}");
+  `;
     if (gateway.isSplit()) {
       gateway.outgoing.forEach(targetId => {
-        result += `    enable("${targetId}");\n`;
-        if (this.model.getElementById(targetId) instanceof Gateway) result += `    ${this.parseSid(targetId)}();\n`;
+        result += `    enable("${targetId}"); \n`;
+        if (this.model.getElementById(targetId) instanceof Gateway) result += `    ${this.parseSid(targetId)} (); \n`;
       });
     } else if (gateway.isJoin()) {
-      gateway.incoming.forEach(src => result += `    require(elements[position["${src}"]].status == State.DONE);\n`);
-      if (gateway.outgoing.length > 0) {
-        const targetId = gateway.outgoing[0];
-        result += `    enable("${targetId}");\n`;
-        if (this.model.getElementById(targetId) instanceof Gateway) result += `    ${this.parseSid(targetId)}();\n`;
+      result += `      joinCounts["${gateway.id}"] += 1;
+  if (joinCounts["${gateway.id}"] == ${gateway.incoming.length}) {
+    joinCounts["${gateway.id}"] = 0;
+    enable("${gateway.outgoing[0]}");
+    `;
+      const targetId = gateway.outgoing[0];
+      if (targetId && this.model.getElementById(targetId) instanceof Gateway) {
+        result += `      ${this.parseSid(targetId)} (); \n`;
       }
+      result += `      }
+  `;
     }
     result += '  }\n';
     return result;
   }
 
   generateEventBasedGatewayFunction(gateway) {
-    let result = `  function ${this.parseSid(gateway.id)}() private {
+    let result = `  function ${this.parseSid(gateway.id)} () private {
     require(elements[position["${gateway.id}"]].status == State.ENABLED);
     done("${gateway.id}");
-`;
-    gateway.outgoing.forEach(targetId => result += `    enable("${targetId}");\n`);
+    `;
+    gateway.outgoing.forEach(targetId => result += `    enable("${targetId}"); \n`);
     result += '  }\n';
     return result;
   }
 
   generateStartEventFunction(event) {
-    return `  function ${this.parseSid(event.id)}() private {
-    require(elements[position["${event.id}"]].status == State.ENABLED);
-    done("${event.id}");
+    return `  function ${this.parseSid(event.id)} () private {
+      require(elements[position["${event.id}"]].status == State.ENABLED);
+      done("${event.id}");
 ${this.generateNextElementEnabling(event)}
-  }\n`;
+    } \n`;
   }
 
   generateEndEventFunction(event) {
-    return `  function ${this.parseSid(event.id)}() private {
-    require(elements[position["${event.id}"]].status == State.ENABLED);
-    done("${event.id}");
-  }\n`;
+    return `  function ${this.parseSid(event.id)} () private {
+      require(elements[position["${event.id}"]].status == State.ENABLED);
+      done("${event.id}");
+    } \n`;
   }
 
   collectConditionVariables() {
@@ -392,12 +404,12 @@ ${this.generateNextElementEnabling(event)}
   generateNextElementEnabling(element) {
     let result = '';
     element.outgoing.forEach(targetId => {
-      result += `    enable("${targetId}");\n`;
+      result += `    enable("${targetId}"); \n`;
       const nextElement = this.model.getElementById(targetId);
       if (nextElement) {
         // Se è un Gateway o un EndEvent, eseguilo subito!
         if (nextElement instanceof Gateway || nextElement.type === 'bpmn:EndEvent') {
-          result += `    ${this.parseSid(targetId)}();\n`;
+          result += `    ${this.parseSid(targetId)} (); \n`;
         }
       }
     });
@@ -406,7 +418,7 @@ ${this.generateNextElementEnabling(event)}
 
   generateParameterString(message) {
     if (!message || !message.parameters) return '';
-    return message.parameters.map(p => `${this.mapToSolidityType(p.type, true)} ${this.sanitizeName(p.name)}`).join(', ');
+    return message.parameters.map(p => `${this.mapToSolidityType(p.type, true)} ${this.sanitizeName(p.name)} `).join(', ');
   }
 
   translateCondition(condition) {
@@ -419,9 +431,9 @@ ${this.generateNextElementEnabling(event)}
       if (condition.includes('==')) {
         const [v, val] = condition.split('==').map(s => s.trim());
         if (val.startsWith('"')) return `compareStrings(currentMemory.${this.sanitizeName(v)}, ${val})`;
-        return `currentMemory.${this.sanitizeName(v)} == ${val}`;
+        return `currentMemory.${this.sanitizeName(v)} == ${val} `;
       }
-      if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(condition)) return `currentMemory.${this.sanitizeName(condition)}`;
+      if (/^[a-zA-Z_][a-zA-Z0-9_]*$/.test(condition)) return `currentMemory.${this.sanitizeName(condition)} `;
       return condition.replace(/\b([a-zA-Z_][a-zA-Z0-9_]*)\b/g, (match) => 'currentMemory.' + this.sanitizeName(match));
     }
 
@@ -430,7 +442,7 @@ ${this.generateNextElementEnabling(event)}
       let check = 'true';
       if (condition.includes('== false')) check = 'false';
       const safeString = condition.replace(/"/g, '\\"');
-      return `env.isReachable(stringToBytes32("${safeString}")) == ${check}`;
+      return `env.isReachable(stringToBytes32("${safeString}")) == ${check} `;
     }
 
     const posMatch = condition.match(/isPosition\(([^,]+),([^)]+)\)/);
@@ -445,7 +457,7 @@ ${this.generateNextElementEnabling(event)}
       const isNumber = !isNaN(trimmedValue) && !trimmedValue.startsWith('"');
 
       if (isNumber) {
-        return `bytes32ToUint(env.getAttribute(stringToBytes32(currentMemory.${this.sanitizeName(varName)}), stringToBytes32("${attrName}"))) ${op} ${trimmedValue}`;
+        return `bytes32ToUint(env.getAttribute(stringToBytes32(currentMemory.${this.sanitizeName(varName)}), stringToBytes32("${attrName}"))) ${op} ${trimmedValue} `;
       } else {
         const valClean = trimmedValue.replace(/"/g, '');
         return `env.getAttribute(stringToBytes32(currentMemory.${this.sanitizeName(varName)}), stringToBytes32("${attrName}")) ${op} stringToBytes32("${valClean}")`;
@@ -456,7 +468,7 @@ ${this.generateNextElementEnabling(event)}
     if (condition.includes('==')) {
       const [v, val] = condition.split('==').map(s => s.trim());
       if (val.startsWith('"')) return `compareStrings(currentMemory.${this.sanitizeName(v)}, ${val})`;
-      return `currentMemory.${this.sanitizeName(v)} == ${val}`;
+      return `currentMemory.${this.sanitizeName(v)} == ${val} `;
     }
 
     return condition;
@@ -464,35 +476,35 @@ ${this.generateNextElementEnabling(event)}
 
   generateHelperFunctions() {
     let result = `
-  function enable(string memory _taskID) internal {
-    elements[position[_taskID]].status = State.ENABLED;
-  }
-  function disable(string memory _taskID) internal {
-    elements[position[_taskID]].status = State.DISABLED;
-  }
-  function done(string memory _taskID) internal {
-    elements[position[_taskID]].status = State.DONE;
+    function enable(string memory _taskID) internal {
+      elements[position[_taskID]].status = State.ENABLED;
+    }
+    function disable(string memory _taskID) internal {
+      elements[position[_taskID]].status = State.DISABLED;
+    }
+    function done(string memory _taskID) internal {
+      elements[position[_taskID]].status = State.DONE;
     emit functionDone(_taskID);
-  }
-  function getCurrentState() public view returns(Element[] memory, StateMemory memory) {
-    return (elements, currentMemory);
-  }
-  function compareStrings(string memory a, string memory b) internal pure returns (bool) {
-    return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
-  }
-`;
+    }
+    function getCurrentState() public view returns(Element[] memory, StateMemory memory) {
+      return (elements, currentMemory);
+    }
+    function compareStrings(string memory a, string memory b) internal pure returns(bool) {
+      return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
+    }
+    `;
     // Genera helper environment SOLO se necessario
     if (this.needsEnvironment) {
       result += `
-  function stringToBytes32(string memory source) internal pure returns (bytes32 result) {
+    function stringToBytes32(string memory source) internal pure returns(bytes32 result) {
       bytes memory tempEmptyStringTest = bytes(source);
       if (tempEmptyStringTest.length == 0) return 0x0;
-      assembly { result := mload(add(source, 32)) }
-  }
-  function bytes32ToUint(bytes32 _bytes32) internal pure returns (uint) {
+      assembly { result:= mload(add(source, 32)) }
+    }
+    function bytes32ToUint(bytes32 _bytes32) internal pure returns(uint) {
       return uint(_bytes32);
-  }
-`;
+    }
+    `;
     }
     return result;
   }
@@ -508,7 +520,7 @@ ${this.generateNextElementEnabling(event)}
           // Disabilita tutti gli ALTRI outgoing che non siano questo task
           sourceElement.outgoing.forEach(siblingId => {
             if (siblingId !== task.id) {
-              logic += `    disable("${siblingId}");\n`;
+              logic += `    disable("${siblingId}"); \n`;
             }
           });
         }
@@ -521,7 +533,7 @@ ${this.generateNextElementEnabling(event)}
   sanitizeName(name) {
     const reserved = ['address', 'bool', 'string', 'uint', 'int', 'bytes', 'byte', 'mapping', 'struct', 'enum', 'function', 'constructor', 'event', 'modifier', 'contract', 'library', 'interface', 'payable', 'view', 'pure', 'public', 'private', 'internal', 'external', 'storage', 'memory', 'calldata', 'virtual', 'override', 'returns', 'return', 'break', 'continue', 'if', 'else', 'for', 'while', 'do', 'new', 'delete', 'this', 'super', 'emit', 'try', 'catch', 'revert', 'require', 'assert', 'unchecked'];
     if (reserved.includes(name)) {
-      return `_${name}`;
+      return `_${name} `;
     }
     return name;
   }

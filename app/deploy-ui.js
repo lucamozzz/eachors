@@ -464,7 +464,37 @@ function showInputPopup(functionName, methodAbi, messageParams) {
             label.style.fontWeight = "bold";
 
             let field;
-            if (param.type === 'bool') {
+            // Check if this parameter refers to a location (by name)
+            const isLocationField = param.name.toLowerCase().includes('location') ||
+                param.name.toLowerCase().includes('site') ||
+                param.name.toLowerCase().includes('place');
+
+            const physicalPlaces = (typeof window.bpenvModeler?.getPhysicalPlaces === 'function')
+                ? window.bpenvModeler.getPhysicalPlaces()
+                : [];
+
+            if (isLocationField && physicalPlaces.length > 0) {
+                // RENDER SELECT (Dropdown) for locations
+                field = document.createElement('select');
+                field.style.width = "100%";
+                field.style.padding = "8px";
+                field.style.boxSizing = "border-box";
+                field.style.border = "1px solid #ccc";
+                field.style.borderRadius = "4px";
+
+                // Add an empty or default option
+                const defaultOpt = document.createElement('option');
+                defaultOpt.value = "";
+                defaultOpt.text = "-- Seleziona Luogo --";
+                field.appendChild(defaultOpt);
+
+                physicalPlaces.forEach(p => {
+                    const opt = document.createElement('option');
+                    opt.value = p.id;
+                    opt.text = p.name ? `${p.name} (${p.id})` : p.id;
+                    field.appendChild(opt);
+                });
+            } else if (param.type === 'bool') {
                 field = document.createElement('select');
                 field.style.width = "100%";
                 field.style.padding = "8px";
@@ -513,6 +543,22 @@ function showInputPopup(functionName, methodAbi, messageParams) {
     const sendBtn = document.createElement('button');
     sendBtn.innerText = "Conferma e Invia";
     sendBtn.style.cssText = "padding: 8px 15px; border: none; background: #4CAF50; color: white; cursor: pointer; border-radius: 4px; font-weight: bold;";
+
+    // Logic to handle location change (Zoom)
+    const locationSelect = inputs.find(i => i.tagName === 'SELECT' && i.options[0]?.text === '-- Seleziona Luogo --');
+    if (locationSelect) {
+        locationSelect.onchange = (e) => {
+            const placeId = e.target.value;
+            if (placeId) {
+                // 🗺️ OPTIONAL: Map Zoom/Focus
+                if (typeof window.bpenvModeler?.focusPlace === 'function') {
+                    window.bpenvModeler.focusPlace(placeId);
+                } else {
+                    console.log("Map focus requested for:", placeId);
+                }
+            }
+        };
+    }
 
     sendBtn.onclick = async () => {
         const args = inputs.map((input, index) => {
